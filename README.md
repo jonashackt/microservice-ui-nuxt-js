@@ -94,6 +94,106 @@ After project generation has finished, let's finally run our project skelleton w
 npm run dev
 ```
 
+## Generate Static Site from Nuxt.js application 
+
+Now we should generate our Nuxt.js static site. So inside our project's root directory let's run:
+
+```shell
+npm run generate
+```
+
+This will result in a normal NPM build, followed by the static site generation:
+
+```shell
+ℹ Full static generation activated                                                                                                                                                  10:42:26
+ℹ Generating output directory: dist/                                                                                                                                                10:42:26
+ℹ Generating pages with full static mode                                                                                                                                            10:42:26
+✔ Generated route "/"                                                                                                                                                               10:42:27
+✔ Client-side fallback created: 200.html                                                                                                                                            10:42:27
+✔ Static manifest generated
+```
+
+Have a look into the `dist` folder - it should contain all files necessary for your site to host in a static hosting service like AWS S3 (or GitHub Pages etc.).
+
+
+## Deploy Static Site Generated Nuxt.js app to AWS S3 with Pulumi
+
+https://www.pulumi.com/docs/reference/pkg/aws/s3/bucket/
+
+https://www.pulumi.com/docs/reference/pkg/aws/s3/bucketobject/
+
+https://www.pulumi.com/docs/tutorials/aws/s3-website/
+
+Let's create a separate `deployment` directory for our Pulumi sources (since we can't override our `package.json` etc. of our root project):
+
+```shell
+mkdir deployment && cd deployment
+pulumi new aws-typescript
+```
+
+I named the Pulumi project after my root project `microservice-ui-nuxt-js`
+
+Now inside our [deployment/index.ts](deployment/index.ts) Pulumi TypeScript program let's create an S3 Bucket for static website hosting:
+
+```javascript
+import * as pulumi from "@pulumi/pulumi";
+import * as aws from "@pulumi/aws";
+import * as fs from "fs";
+import * as path from "path";
+
+// Create an AWS resource (S3 Bucket)
+const nuxtBucket = new aws.s3.Bucket("microservice-ui-nuxt-js-hosting-bucket", {
+  acl: "public-read",
+  website: {
+    indexDocument: "index.html",
+  }
+});
+
+// Nuxt.js target dir for static site generated assets
+const siteDir = "../dist";
+
+// Scan for files in Nuxt.js target dir & add them via Pulumi FileAssets into S3 Bucket
+recursivelyAddFilesToS3(siteDir);
+
+function recursivelyAddFilesToS3(dir: string) {
+  for (const fileOrDir of fs.readdirSync(dir)) {
+    const fileOrDirPath = path.join(dir, fileOrDir);
+    if(fs.statSync(fileOrDirPath).isDirectory()) {
+      // recurse into subdirectory (see https://stackoverflow.com/a/16684530/4964553)
+      recursivelyAddFilesToS3(fileOrDirPath);
+    } else {
+      // Yeah, we got a file - so let's create a S3 Bucket Object
+      new aws.s3.BucketObject(fileOrDir, {
+        bucket: nuxtBucket,
+        source: new pulumi.asset.FileAsset(fileOrDirPath)
+      })
+    }
+  }
+}
+
+// Export the name of the bucket
+export const bucketName = nuxtBucket.id;
+
+```
+
+And for every file inside the Nuxt.js target dir `dist` we create a new S3 object inside the S3 Bucket.
+
+Before we finally run our Pulumi program, make sure to have an apropriate AWS `ACCESS_KEY_ID` and `ACCESS_KEY_SECRET` configured.
+If you don't have them, you can generate them inside the `IAM` service for your AWS user in the AWS management console.
+Make sure to run `aws configure` to configure both to your local terminal.
+
+Now it's time to run our Pulumi deployment. `cd` into `deployment` and run:
+
+```shell
+pulumi up
+```
+
+
+## Use Pulumi with GitHub Actions CI
+
+
+
+
 
 ## Links
 
