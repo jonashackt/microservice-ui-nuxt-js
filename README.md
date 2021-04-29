@@ -138,8 +138,6 @@ Now inside our [deployment/index.ts](deployment/index.ts) Pulumi TypeScript prog
 ```javascript
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import * as fs from "fs";
-import * as path from "path";
 
 // Create an AWS resource (S3 Bucket)
 const nuxtBucket = new aws.s3.Bucket("microservice-ui-nuxt-js-hosting-bucket", {
@@ -149,49 +147,35 @@ const nuxtBucket = new aws.s3.Bucket("microservice-ui-nuxt-js-hosting-bucket", {
   }
 });
 
-// Nuxt.js target dir for static site generated assets
-const siteDir = "../dist";
-
-// Scan for files in Nuxt.js target dir & add them via Pulumi FileAssets into S3 Bucket
-recursivelyAddFilesToS3(siteDir);
-
-function recursivelyAddFilesToS3(dir: string) {
-  for (const fileOrDir of fs.readdirSync(dir)) {
-    const fileOrDirPath = path.join(dir, fileOrDir);
-    if(fs.statSync(fileOrDirPath).isDirectory()) {
-      // recurse into subdirectory (see https://stackoverflow.com/a/16684530/4964553)
-      recursivelyAddFilesToS3(fileOrDirPath);
-    } else {
-      // Yeah, we got a file - so let's create a S3 Bucket Object
-      new aws.s3.BucketObject(fileOrDir, {
-        bucket: nuxtBucket,
-        source: new pulumi.asset.FileAsset(fileOrDirPath)
-      })
-    }
-  }
-}
+// S3 Objects from Nuxt.js static site generation will be added through aws CLI instead of Pulumi like this
+// (see https://www.pulumi.com/docs/tutorials/aws/aws-ts-static-website/#deployment-speed):
+// aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
 
 // Export the name of the bucket
 export const bucketName = nuxtBucket.id;
-
+export const bucketUrl = nuxtBucket.websiteEndpoint;
 ```
 
 And for every file inside the Nuxt.js target dir `dist` we create a new S3 object inside the S3 Bucket.
 
+> But this shouldn't be done using Pulumi's `BucketObject` for multiple files really - see this so Q&A for more details: https://stackoverflow.com/questions/67318524/pulumi-typescript-aws-how-to-upload-multiple-files-to-s3-incl-nested-files
 
-Create prefixes (aka Folders for contents of `dist` directory):
+Instead we should use AWS CLI directly to copy (and later incrementally sync, when new builds ran) our static website files to our S3 Bucket like this:
 
-https://stackoverflow.com/a/57479653/4964553
+```shell
+aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+```
 
+Using $(pulumi stack output bucketName) we simply get the S3 Bucket name that was created by Pulumi. Mind the --acl public-read parameter at the end, since you have to enable public read access on each of your static web files in S3, although the Bucket itself already has public read access!
 
-
-Before we finally run our Pulumi program, make sure to have an apropriate AWS `ACCESS_KEY_ID` and `ACCESS_KEY_SECRET` configured.
+> Before we finally run our Pulumi program, make sure to have an apropriate AWS `ACCESS_KEY_ID` and `ACCESS_KEY_SECRET` configured.
 If you don't have them, you can generate them inside the `IAM` service for your AWS user in the AWS management console.
 Make sure to run `aws configure` to configure both to your local terminal.
 
 Now it's time to run our Pulumi deployment. `cd` into `deployment` and run:
 
 ```shell
+pulumi stack select dev
 pulumi up
 ```
 
