@@ -178,6 +178,13 @@ export const bucketName = nuxtBucket.id;
 
 And for every file inside the Nuxt.js target dir `dist` we create a new S3 object inside the S3 Bucket.
 
+
+Create prefixes (aka Folders for contents of `dist` directory):
+
+https://stackoverflow.com/a/57479653/4964553
+
+
+
 Before we finally run our Pulumi program, make sure to have an apropriate AWS `ACCESS_KEY_ID` and `ACCESS_KEY_SECRET` configured.
 If you don't have them, you can generate them inside the `IAM` service for your AWS user in the AWS management console.
 Make sure to run `aws configure` to configure both to your local terminal.
