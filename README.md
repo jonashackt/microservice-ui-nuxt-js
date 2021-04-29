@@ -182,6 +182,110 @@ pulumi up
 
 ## Use Pulumi with GitHub Actions CI
 
+As already described here: https://github.com/jonashackt/azure-training-pulumi#pulumi-with-github-actions there are some steps to take in order to use Pulumi with GitHub Actions.
+
+https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
+
+It's really cool to see that there's a Pulumi GitHub action project https://github.com/pulumi/actions already ready for us.
+
+
+#### Create needed GitHub Repository Secrets
+
+First we need to create 5 new GitHub Repository Secrets (encrypted variables) in your repo under `Settings/Secrets`.
+
+We should start to create a new Pulumi Access Token `PULUMI_ACCESS_TOKEN` at https://app.pulumi.com/jonashackt/settings/tokens
+
+Now we need to create the AWS specific variables: `AWS_ACCESSKEY_ID` and `AWS_SECRET_ACCESSKEY`. Create them all as GitHub Repository Secrets.
+
+There should be all these vars defined:
+
+![github-actions-pulumi-secrets](screenshots/github-actions-pulumi-secrets.png)
+
+
+
+#### Create GitHub Actions workflow
+
+Let's create a GitHub Actions workflow [preview-and-up.yml](.github/workflows/preview-and-up.yml):
+
+```yaml
+name: pulumi-deploy
+
+on: [push]
+
+env:
+  AWS_ACCESSKEY_ID: ${{ secrets.AWS_ACCESSKEY_ID }}
+  AWS_SECRET_ACCESSKEY: ${{ secrets.AWS_SECRET_ACCESSKEY }}
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+jobs:
+  preview-up-destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: In order to use the Pulumi v2+ action, we need to setup the Pulumi project specific language environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: After setting up the Pulumi project specific language environment, we need to install the dependencies also (see https://github.com/pulumi/actions#example-workflows)
+        run: npm install
+
+      - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
+        uses: pulumi/action-install-pulumi-cli@v1.0.2
+
+      - name: Create GHA pipeline specific Pulumi Stack
+        run: |
+          cd deployment
+          pulumi stack init github-${{ github.run_id }}
+
+      - name: Preview pulumi up
+        uses: pulumi/actions@v3
+        with:
+          command: preview
+          stack-name: github-${{ github.run_id }}
+          work-dir: deployment
+
+      - name: Actually run pulumi up
+        uses: pulumi/actions@v3
+        with:
+          command: up
+          stack-name: github-${{ github.run_id }}
+          work-dir: deployment
+
+      - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
+        run: aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+        working-directory: ./deployment
+
+```
+
+We use the possibility [to define the environment variables on the workflow's top level](https://docs.github.com/en/actions/reference/environment-variables) to reduce the 3 definition to one. Also we define a `stack-name` containing the `GITHUB_RUN_ID` which is one of [the default GHA environment variables](https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables) which is defined as:
+
+> A unique number for each run within a repository. This number does not change if you re-run the workflow run.
+
+With this we prevent [Action workflows getting in each other's way like this](https://github.com/jonashackt/azure-training-pulumi/runs/1977168868?check_suite_focus=true):
+
+```shell
+Updating (dev)
+
+error: [409] Conflict: Another update is currently in progress.
+To learn more about possible reasons and resolution, visit https://www.pulumi.com/docs/troubleshooting/#conflict
+```
+
+See https://stackoverflow.com/questions/66563656/pulumi-with-github-actions-crashing-parallel-workflows-with-error-409-conflic/66563657#66563657
+
+
+Using this simply workflow, the first `preview` job needs to finish successfully before the `up` job starts:
+
+![github-actions-preview-triggers-up](screenshots/github-actions-preview-triggers-up.png)
+
+And we finally destroy our stack also, so that we don't procude to much costs :)
+
+Don't forget to craft a nice GitHub Actions badge!
+
+```
+[![Build Status](https://github.com/jonashackt/azure-training-pulumi/workflows/pulumi-preview-up/badge.svg)](https://github.com/jonashackt/azure-training-pulumi/actions)
+```
 
 
 
