@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+env:
+  AWS_ACCESSKEY_ID: ${{ secrets.AWS_ACCESSKEY_ID }}
+  AWS_SECRET_ACCESSKEY: ${{ secrets.AWS_SECRET_ACCESSKEY }}
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
 jobs:
   npm-ci-and-pulumi-deploy:
     runs-on: ubuntu-latest
