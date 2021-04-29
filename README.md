@@ -195,7 +195,7 @@ First we need to create 5 new GitHub Repository Secrets (encrypted variables) in
 
 We should start to create a new Pulumi Access Token `PULUMI_ACCESS_TOKEN` at https://app.pulumi.com/jonashackt/settings/tokens
 
-Now we need to create the AWS specific variables: `AWS_ACCESSKEY_ID` and `AWS_SECRET_ACCESSKEY`. Create them all as GitHub Repository Secrets.
+Now we need to create the AWS specific variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` (they need to be exactly named like this, see https://www.pulumi.com/docs/intro/cloud-providers/aws/setup/#environment-variables). Create them all as GitHub Repository Secrets.
 
 There should be all these vars defined:
 
