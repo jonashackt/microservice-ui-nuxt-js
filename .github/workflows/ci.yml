@@ -42,10 +42,11 @@ jobs:
       - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
         uses: pulumi/action-install-pulumi-cli@v1.0.2
 
-      - name: Create GHA pipeline specific Pulumi Stack
+      - name: Create GHA pipeline specific Pulumi Stack & set aws:region
         run: |
           cd deployment
           pulumi stack init github-${{ github.run_id }}
+          pulumi config set aws:region eu-central-1
 
       - name: Preview pulumi up
         uses: pulumi/actions@v3
