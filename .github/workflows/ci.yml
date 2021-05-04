@@ -35,6 +35,9 @@ jobs:
       - name: Run tests 🧪
         run: npm run test
 
+      - name: Generate Static Site from Nuxt.js application
+        run: npm run generate
+
       - name: After setting up the Pulumi project specific language environment, we need to install the dependencies also (see https://github.com/pulumi/actions#example-workflows)
         run: npm install
         working-directory: ./deployment
