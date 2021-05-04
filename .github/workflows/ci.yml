@@ -32,6 +32,10 @@ jobs:
       - name: Install Nuxt.js dependencies
         run: npm install
 
+      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
+        run: npm install
+        working-directory: ./deployment
+
       - name: Run tests 🧪
         run: npm run test
 
@@ -41,12 +45,9 @@ jobs:
       - name: Install Pulumi CLI
         uses: pulumi/action-install-pulumi-cli@v1.0.2
 
-      - name: Install Pulumi dependencies
-        run: npm install
-        working-directory: ./deployment
-
       - name: Run pulumi preview & pulumi up
         run: |
+          pulumi stack select dev
           pulumi preview
           pulumi up -y
         working-directory: ./deployment
