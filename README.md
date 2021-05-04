@@ -367,7 +367,7 @@ So first we need to define the environment inside our [ci.yml](.github/workflows
 ```
 
 Now we need to give our step Deployment step a `id` so that we can reference it inside the `environment:url`. Also we need to
-set a variable like `s3_url` that will hold the S3 Buckets url with `echo "::set-output name=s3_url::$(pulumi stack output bucketUrl)"` (see [this so answer also](https://stackoverflow.com/a/57989070/4964553)):
+set a variable like `s3_url` that will hold the S3 Buckets url with `echo "::set-output name=s3_url::http://$(pulumi stack output bucketUrl)"` (see [this so answer also](https://stackoverflow.com/a/57989070/4964553)):
 
 ```yaml
       - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
@@ -387,6 +387,10 @@ With this we can use the output inside our `environment:url`:
       name: microservice-ui-nuxt-js-deployment
       url: ${{ steps.aws-sync.outputs.s3_url }}
 ```
+
+Now we should be able to see (and click on) the URL as an environment inside the GitHub Actions UI:
+
+![github-actions-environment-link-s3](screenshots/github-actions-environment-link-s3.png)
 
 ## Links
 
