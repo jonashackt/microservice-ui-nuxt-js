@@ -1,0 +1,3 @@
+name: microservice-ui-nuxt-js
+runtime: nodejs
+description: Deploying a Nuxt.js Static Site to AWS S3
