@@ -131,7 +131,7 @@ mkdir deployment && cd deployment
 pulumi new aws-typescript
 ```
 
-I named the Pulumi project after my root project `microservice-ui-nuxt-js`
+I named the Pulumi project after my root project `microservice-ui-nuxt-js-deployment`
 
 Now inside our [deployment/index.ts](deployment/index.ts) Pulumi TypeScript program let's create an S3 Bucket for static website hosting:
 

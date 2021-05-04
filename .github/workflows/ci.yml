@@ -32,18 +32,18 @@ jobs:
       - name: Install Nuxt.js dependencies
         run: npm install
 
-      - name: Install Pulumi dependencies
-        run: npm install
-        working-directory: ./deployment
-
       - name: Run tests 🧪
         run: npm run test
 
       - name: Generate Static Site from Nuxt.js application
         run: npm run generate
 
-      - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
+      - name: Install Pulumi CLI
         uses: pulumi/action-install-pulumi-cli@v1.0.2
+
+      - name: Install Pulumi dependencies
+        run: npm install
+        working-directory: ./deployment
 
       - name: Run pulumi preview & pulumi up
         run: |
