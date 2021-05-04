@@ -12,6 +12,12 @@ env:
 jobs:
   npm-ci-and-pulumi-deploy:
     runs-on: ubuntu-latest
+
+    # Create an environment for the static hosting enabled & Pulumi created S3 Bucket
+    environment:
+      name: microservice-ui-nuxt-js-deployment
+      url: ${{ steps.aws-sync.outputs.s3_url }}
+
     steps:
       - name: Checkout 🛎
         uses: actions/checkout@master
@@ -60,8 +66,10 @@ jobs:
           aws-region: eu-central-1
 
       - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
+        id: aws-sync
         run: |
           aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
           echo "Access the Nuxt.js app at the following URL:"
           pulumi stack output bucketUrl
+          echo "::set-output name=s3_url::$(pulumi stack output bucketUrl)"
         working-directory: ./deployment

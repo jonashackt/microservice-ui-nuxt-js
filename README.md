@@ -352,6 +352,41 @@ Run aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-rea
 Finally we can use the AWS CLI to sync our Nuxt.js generated static site files into the Pulumi created S3 Bucket!
 
 
+#### Create GitHub environment with the S3 Bucket URL
+
+[As the docs state](https://docs.github.com/en/actions/reference/environments#creating-an-environment):
+
+> Running a workflow that references an environment that does not exist will create an environment with the referenced name. The newly created environment will not have any protection rules or secrets configured. Anyone that can edit workflows in the repository can create environments via a workflow file, but only repository admins can configure the environment.
+
+So first we need to define the environment inside our [ci.yml](.github/workflows/ci.yml):
+
+```yaml
+    environment:
+      name: microservice-ui-nuxt-js-deployment
+      url: ${{ steps.step_name.outputs.url_output }}
+```
+
+Now we need to give our step Deployment step a `id` so that we can reference it inside the `environment:url`. Also we need to
+set a variable like `s3_url` that will hold the S3 Buckets url with `echo "::set-output name=s3_url::$(pulumi stack output bucketUrl)"` (see [this so answer also](https://stackoverflow.com/a/57989070/4964553)):
+
+```yaml
+      - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
+        id: aws-sync
+        run: |
+          aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+          echo "Access the Nuxt.js app at the following URL:"
+          pulumi stack output bucketUrl
+          echo "::set-output name=s3_url::$(pulumi stack output bucketUrl)"
+        working-directory: ./deployment
+```
+
+With this we can use the output inside our `environment:url`:
+
+```yaml
+    environment:
+      name: microservice-ui-nuxt-js-deployment
+      url: ${{ steps.aws-sync.outputs.s3_url }}
+```
 
 ## Links
 
