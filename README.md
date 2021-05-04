@@ -341,7 +341,9 @@ npm run generate
 
 This will generate all files into the `dist` directory we'll later use with the AWS CLI to sync into our S3 Bucket.
 
-After having installed the Pulumi CLI with the [pulumi/action-install-pulumi-cli](https://github.com/pulumi/action-install-pulumi-cli) action, we can use Pulumi to create our AWS resources - which is our static website hosting enabled S3 Bucket maily.
+After having installed the Pulumi CLI with the [pulumi/action-install-pulumi-cli](https://github.com/pulumi/action-install-pulumi-cli) action, we can use Pulumi to create our AWS resources - which is our static website hosting enabled S3 Bucket mainly.
+
+We also use GitHub Actions ability to define a `working-directory: ./deployment` ([as discussed here](https://stackoverflow.com/a/58142276/4964553)) so that we can issue our `pulumi up` in the right directory.
 
 To not run into problems using the pre-installed AWS CLI on GitHub Actions we should also configure our AWS credentials using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action. Otherwise we'll run into errors like this:
 
