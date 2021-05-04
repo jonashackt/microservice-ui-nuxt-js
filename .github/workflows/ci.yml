@@ -36,7 +36,7 @@ jobs:
         run: npm run test
 
       - name: Generate Static Site from Nuxt.js application
-        run: npm run generate
+        run: npm run build
 
       - name: After setting up the Pulumi project specific language environment, we need to install the dependencies also (see https://github.com/pulumi/actions#example-workflows)
         run: npm install
@@ -47,14 +47,14 @@ jobs:
 
       - name: Create GHA pipeline specific Pulumi Stack & set Pulumi aws:region
         run: |
-          pulumi stack init github-${{ github.run_id }}
+          pulumi stack init github-dev
           pulumi config set aws:region eu-central-1
         working-directory: ./deployment
 
       - name: Run pulumi preview and pulumi up
         run: |
-          pulumi preview --stack github-${{ github.run_id }}
-          pulumi up --stack github-${{ github.run_id }} -y
+          pulumi preview --stack github-dev
+          pulumi up --stack github-dev -y
         working-directory: ./deployment
 
       - name: Configure AWS credentials for GitHub pre-installed AWS CLI
