@@ -376,7 +376,7 @@ set a variable like `s3_url` that will hold the S3 Buckets url with `echo "::set
           aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
           echo "Access the Nuxt.js app at the following URL:"
           pulumi stack output bucketUrl
-          echo "::set-output name=s3_url::$(pulumi stack output bucketUrl)"
+          echo "::set-output name=s3_url::http://$(pulumi stack output bucketUrl)"
         working-directory: ./deployment
 ```
 
