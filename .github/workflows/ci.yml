@@ -29,18 +29,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies 👨🏻‍💻
+      - name: Install Nuxt.js dependencies
         run: npm install
+
+      - name: Install Pulumi dependencies
+        run: npm install
+        working-directory: ./deployment
 
       - name: Run tests 🧪
         run: npm run test
 
       - name: Generate Static Site from Nuxt.js application
         run: npm run generate
-
-      - name: After setting up the Pulumi project specific language environment, we need to install the dependencies also (see https://github.com/pulumi/actions#example-workflows)
-        run: npm install
-        working-directory: ./deployment
 
       - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
         uses: pulumi/action-install-pulumi-cli@v1.0.2
