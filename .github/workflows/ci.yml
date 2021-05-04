@@ -42,25 +42,24 @@ jobs:
       - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
         uses: pulumi/action-install-pulumi-cli@v1.0.2
 
-      - name: Create GHA pipeline specific Pulumi Stack & set aws:region
+      - name: Create GHA pipeline specific Pulumi Stack & set Pulumi aws:region
         run: |
-          cd deployment
           pulumi stack init github-${{ github.run_id }}
           pulumi config set aws:region eu-central-1
+        working-directory: ./deployment
 
-      - name: Preview pulumi up
-        uses: pulumi/actions@v3
-        with:
-          command: preview
-          stack-name: github-${{ github.run_id }}
-          work-dir: deployment
+      - name: Run pulumi preview and pulumi up
+        run: |
+          pulumi preview --stack github-${{ github.run_id }}
+          pulumi up --stack github-${{ github.run_id }} -y
+        working-directory: ./deployment
 
-      - name: Actually run pulumi up
-        uses: pulumi/actions@v3
+      - name: Configure AWS credentials for GitHub pre-installed AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          command: up
-          stack-name: github-${{ github.run_id }}
-          work-dir: deployment
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
       - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
         run: aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
