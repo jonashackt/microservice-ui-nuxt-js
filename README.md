@@ -1,4 +1,7 @@
 # microservice-ui-nuxt-js
+[![Build Status](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/ci/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/jonashackt/spring-boot-vuejs/blob/master/LICENSE)
+
 Example project showing how to create &amp; deploy a Nuxt.js / Vue.js based frontend and how to interact with a Spring Boot microservice
 
 ![npm-run-dev](screenshots/npm-run-dev.png)
@@ -208,85 +211,145 @@ There should be all these vars defined:
 Let's create a GitHub Actions workflow [preview-and-up.yml](.github/workflows/preview-and-up.yml):
 
 ```yaml
-name: pulumi-deploy
+name: ci
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 env:
-  AWS_ACCESSKEY_ID: ${{ secrets.AWS_ACCESSKEY_ID }}
-  AWS_SECRET_ACCESSKEY: ${{ secrets.AWS_SECRET_ACCESSKEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
 jobs:
-  preview-up-destroy:
+  npm-ci-and-pulumi-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@master
 
-      - name: In order to use the Pulumi v2+ action, we need to setup the Pulumi project specific language environment
-        uses: actions/setup-node@v2
+      - name: Setup node env
+        uses: actions/setup-node@v2.1.2
         with:
           node-version: '14'
 
-      - name: After setting up the Pulumi project specific language environment, we need to install the dependencies also (see https://github.com/pulumi/actions#example-workflows)
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Nuxt.js dependencies
         run: npm install
 
-      - name: Install Pulumi CLI so that we can create a GHA pipeline specific Pulumi Stack
-        uses: pulumi/action-install-pulumi-cli@v1.0.2
-
-      - name: Create GHA pipeline specific Pulumi Stack
-        run: |
-          cd deployment
-          pulumi stack init github-${{ github.run_id }}
-
-      - name: Preview pulumi up
-        uses: pulumi/actions@v3
-        with:
-          command: preview
-          stack-name: github-${{ github.run_id }}
-          work-dir: deployment
-
-      - name: Actually run pulumi up
-        uses: pulumi/actions@v3
-        with:
-          command: up
-          stack-name: github-${{ github.run_id }}
-          work-dir: deployment
-
-      - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
-        run: aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
+        run: npm install
         working-directory: ./deployment
 
+      - name: Run tests
+        run: npm run test
+
+      - name: Generate Static Site from Nuxt.js application
+        run: npm run generate
+
+      - name: Install Pulumi CLI
+        uses: pulumi/action-install-pulumi-cli@v1.0.2
+
+      - name: Run pulumi preview & pulumi up
+        run: |
+          pulumi stack select dev
+          pulumi preview
+          pulumi up -y
+        working-directory: ./deployment
+
+      - name: Configure AWS credentials for GitHub pre-installed AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
+        run: |
+          aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+          echo "Access the Nuxt.js app at the following URL:"
+          pulumi stack output bucketUrl
+        working-directory: ./deployment
 ```
 
-We use the possibility [to define the environment variables on the workflow's top level](https://docs.github.com/en/actions/reference/environment-variables) to reduce the 3 definition to one. Also we define a `stack-name` containing the `GITHUB_RUN_ID` which is one of [the default GHA environment variables](https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables) which is defined as:
+We use the possibility [to define the environment variables on the workflow's top level](https://docs.github.com/en/actions/reference/environment-variables) to reduce the 3 definition to one. 
 
-> A unique number for each run within a repository. This number does not change if you re-run the workflow run.
-
-With this we prevent [Action workflows getting in each other's way like this](https://github.com/jonashackt/azure-training-pulumi/runs/1977168868?check_suite_focus=true):
+Then after using the great cache Action, we need to install our Nuxt project's dependencies. And we also need to install our Pulumi project's npm packages - otherwise `npm run generate` (which generates the Nuxt.js Static Site) won't work ([see this build for example](https://github.com/jonashackt/microservice-ui-nuxt-js/runs/2499420502)):
 
 ```shell
-Updating (dev)
+$ Run npm run generate
 
-error: [409] Conflict: Another update is currently in progress.
-To learn more about possible reasons and resolution, visit https://www.pulumi.com/docs/troubleshooting/#conflict
+> microservice-ui-nuxt-js@1.0.0 generate /home/runner/work/microservice-ui-nuxt-js/microservice-ui-nuxt-js
+> nuxt generate
+
+[fatal] Nuxt build error
+  ERROR in deployment/index.ts:1:25
+  TS2307: Cannot find module '@pulumi/pulumi' or its corresponding type declarations.
+  > 1 | import * as pulumi from "@pulumi/pulumi";
+  |                         ^^^^^^^^^^^^^^^^
+  2 | import * as aws from "@pulumi/aws";
+  3 |
+  4 | // Create an AWS resource (S3 Bucket)
+  
+  ERROR in deployment/index.ts:2:22
+  TS2307: Cannot find module '@pulumi/aws' or its corresponding type declarations.
+  1 | import * as pulumi from "@pulumi/pulumi";
+  > 2 | import * as aws from "@pulumi/aws";
+  |                      ^^^^^^^^^^^^^
+  3 |
+  4 | // Create an AWS resource (S3 Bucket)
+  5 | const nuxtBucket = new aws.s3.Bucket("microservice-ui-nuxt-js-hosting-bucket", {
+
+   ╭─────────────────────────────╮
+   │                             │
+   │   ✖ Nuxt Fatal Error        │
+   │                             │
+   │   Error: Nuxt build error   │
+   │                             │
+   ╰─────────────────────────────╯
+
+npm ERR! code ELIFECYCLE
+npm ERR! errno 1
+npm ERR! microservice-ui-nuxt-js@1.0.0 generate: `nuxt generate`
+npm ERR! Exit status 1
+npm ERR! 
+npm ERR! Failed at the microservice-ui-nuxt-js@1.0.0 generate script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home/runner/.npm/_logs/2021-05-04T09_54_52_203Z-debug.log
+Error: Process completed with exit code 1.
 ```
 
-See https://stackoverflow.com/questions/66563656/pulumi-with-github-actions-crashing-parallel-workflows-with-error-409-conflic/66563657#66563657
+The nuxt generate seems to look for `package.json` files in subdirectories also.
 
+After the obligatory jest test run via `npm run test`, we finally need to generate our Nuxt.js static site files with
 
-Using this simply workflow, the first `preview` job needs to finish successfully before the `up` job starts:
-
-![github-actions-preview-triggers-up](screenshots/github-actions-preview-triggers-up.png)
-
-And we finally destroy our stack also, so that we don't procude to much costs :)
-
-Don't forget to craft a nice GitHub Actions badge!
-
-```
-[![Build Status](https://github.com/jonashackt/azure-training-pulumi/workflows/pulumi-preview-up/badge.svg)](https://github.com/jonashackt/azure-training-pulumi/actions)
+```shell
+npm run generate
 ```
 
+This will generate all files into the `dist` directory we'll later use with the AWS CLI to sync into our S3 Bucket.
+
+After having installed the Pulumi CLI with the [pulumi/action-install-pulumi-cli](https://github.com/pulumi/action-install-pulumi-cli) action, we can use Pulumi to create our AWS resources - which is our static website hosting enabled S3 Bucket maily.
+
+To not run into problems using the pre-installed AWS CLI on GitHub Actions we should also configure our AWS credentials using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action. Otherwise we'll run into errors like this:
+
+```shell
+Run aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+
+<botocore.awsrequest.AWSRequest object at 0x7f01644bd070>
+```
+
+Finally we can use the AWS CLI to sync our Nuxt.js generated static site files into the Pulumi created S3 Bucket!
 
 
 
