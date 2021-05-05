@@ -173,7 +173,7 @@ aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
 
 Using $(pulumi stack output bucketName) we simply get the S3 Bucket name that was created by Pulumi. Mind the --acl public-read parameter at the end, since you have to enable public read access on each of your static web files in S3, although the Bucket itself already has public read access!
 
-> Before we finally run our Pulumi program, make sure to have an apropriate AWS `ACCESS_KEY_ID` and `ACCESS_KEY_SECRET` configured.
+> Before we finally run our Pulumi program, make sure to have an apropriate AWS `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` configured.
 If you don't have them, you can generate them inside the `IAM` service for your AWS user in the AWS management console.
 Make sure to run `aws configure` to configure both to your local terminal.
 
