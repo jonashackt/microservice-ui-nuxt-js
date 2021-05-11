@@ -1,27 +1,28 @@
 <template>
   <div>
+    <TheHeader />
+    <div id="nav">
+      <NuxtLink to="/">Home</NuxtLink> |
+      <NuxtLink to="/service">Service</NuxtLink> |
+      <NuxtLink to="/user">User</NuxtLink>
+    </div>
     <Nuxt />
+    <TheFooter />
   </div>
 </template>
 
 <style>
 html {
-  font-family:
-    'Source Sans Pro',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
+  text-align: center;
+  color: #2c3e50;
 }
 
 *,
@@ -58,5 +59,14 @@ html {
 .button--grey:hover {
   color: #fff;
   background-color: #35495e;
+}
+
+#nav {
+  padding: 30px;
+  text-align: center;
+  a {
+    font-weight: bold;
+    color: #2c3e50;
+  }
 }
 </style>

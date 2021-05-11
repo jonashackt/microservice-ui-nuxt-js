@@ -99,6 +99,161 @@ After project generation has finished, let's finally run our project skelleton w
 npm run dev
 ```
 
+## Vue.js 3.x with Nuxt.js & TypeScript
+
+https://dev.to/iamschulz/scaffolding-an-app-with-vue-3-nuxt-and-typescript-51hl
+
+> At the time of writing, Nuxt (2.15) still uses Vue 2 by default, but it provides a node package that exposes the Composition API
+
+We need to add `@nuxtjs/composition-api` ourselves:
+
+```shell
+npm install @nuxtjs/composition-api
+```
+
+This will enable kind of an beta support for Vue.js 3.x - see https://composition-api.nuxtjs.org/ 
+
+It can be removed with the release of Nuxt 3.x.
+
+For the full setup docs, see https://composition-api.nuxtjs.org/getting-started/setup
+
+We also need to add it as `buildModules` to our [nuxt.config.js](nuxt.config.js):
+
+```javascript
+  // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
+  buildModules: [
+    ...
+    '@nuxtjs/composition-api/module'
+  ],
+```
+
+[Current static-site generation issue](Currently there's an issue with static site generation and async functions which means that you'll need to add time between pages being generated to allow for any async functions to resolve, if you are pre-generating any of your pages):
+
+> Currently there's an issue with static site generation and async functions which means that you'll need to add time between pages being generated to allow for any async functions to resolve, if you are pre-generating any of your pages
+
+So let's add the `generate` configuration to our [nuxt.config.js](nuxt.config.js) also:
+
+```javascript
+  // see https://composition-api.nuxtjs.org/getting-started/setup &
+  // https://github.com/nuxt-community/composition-api/issues/44
+  generate: {
+    // choose to suit your project
+    interval: 2000,
+  }
+```
+
+Now everything is setup to go. We can now use the Vue 3.x style component defintion in our Pages/Views like this in the `script` section:
+
+```javascript
+<script lang="ts">
+import { defineComponent } from "@nuxtjs/composition-api";
+```
+
+
+## Multiple Nuxt Pages: Routing & Navigation
+
+Here we go: https://nuxtjs.org/docs/2.x/get-started/routing
+
+#### Automatic Routes
+
+> Most websites will have more than one page (i.e. a home page, about page, contact page etc.). In order to show these pages, we need a Router. That's where vue-router comes in. When working with the Vue application, you have to set up a configuration file (i.e. router.js) and add all your routes manually to it. Nuxt.js automatically generates the vue-router configuration for you, based on your provided Vue files inside the pages directory. That means you never have to write a router config again! Nuxt.js also gives you automatic code-splitting for all your routes.
+
+> In other words, all you have to do to have routing in your application is to create .vue files in the pages folder.
+
+Pretty cool :) Simply put your `.vue` files into `/pages` dir.
+
+
+#### Navigation & where's my App.vue gone aka Layouts
+
+https://nuxtjs.org/docs/2.x/get-started/routing#navigation
+
+> To navigate between pages of your app, you should use the NuxtLink component. This component is included with Nuxt.js and therefore you don't have to import it as you do with other components
+
+So if you come from Vue.js development like me, you may like the following mapping:
+
+* `<router-link` in Nuxt is `<NuxtLink>` (see https://nuxtjs.org/docs/2.x/get-started/routing#navigation)
+* `<router-view/>` is `<Nuxt>`, which is the component you use to display your page components (see https://nuxtjs.org/docs/2.x/features/nuxt-components#the-nuxt-component)
+* the `App.vue` is gone with Nuxt, but there's the `layouts` dir - and the [layouts/default.vue](layouts/default.vue) contains the same page layout as `App.vue` did with Vue! And remember: "The <Nuxt> component can only be used inside layouts." (for layouts see https://nuxtjs.org/docs/2.x/directory-structure/layouts)
+
+
+## Use Axios with Nuxt.js
+
+Here's great documentation: https://nuxtjs.org/docs/2.x/directory-structure/plugins#external-packages
+
+Install axios with:
+
+```shell
+npm install @nuxtjs/axios
+```
+
+and add it to 2 sections of our  [nuxt.config.js](nuxt.config.js) - `plugins` and `modules`:
+
+```javascript
+  // Modules: https://go.nuxtjs.dev/config-modules
+  modules: [
+    '@nuxtjs/axios'
+  ],
+
+// Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
+  plugins: [
+    ...
+    '@/plugins/axios.ts'
+  ],
+```
+
+Now we need to fill the [plugins/axios.ts](plugins/axios.ts) with some HTTP access code (I borrowed it from https://github.com/jonashackt/spring-boot-vuejs/blob/master/frontend/src/api/backend-api.ts).
+
+
+### Configure Axios & Spring Boot to handle CORS/SOP
+
+See https://github.com/jonashackt/spring-boot-vuejs#the-problem-with-sop
+
+As our Spring Boot App is deployed separately, we don't really need the CORS setup right? Nah, we need at least something!
+
+See https://stackoverflow.com/a/56168756/4964553 and https://stackoverflow.com/questions/52230470/how-to-use-webpack-dev-proxy-with-nuxt
+
+So let's configure the correct header in Axios. Therefore head over to our [plugins/axios.ts](plugins/axios.ts) and add the `'Access-Control-Allow-Origin': '*',` header:
+
+```javascript
+// TODO: We need to make the baseURL configurable through environment variables for sure in the next step!
+const axiosApi = axios.create({
+  baseURL: `http://localhost:8098/api`,
+  timeout: 1000,
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+
+
+
+Our Spring Boot based backend https://github.com/jonashackt/microservice-api-spring-boot needs to support CORS too.
+
+See https://spring.io/guides/gs/rest-service-cors/
+
+So inside the [SpringBootVuejsApplication.java](https://github.com/jonashackt/microservice-api-spring-boot/blob/main/src/main/java/de/jonashackt/springbootvuejs/SpringBootVuejsApplication.java) we need to configure:
+
+```java
+	// Enable CORS globally
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/*").allowedOrigins("*");
+			}
+		};
+	}
+```
+
+> We should change the `allowedOrigins` from the wildcard `*` to a concrete URL as we go to production.
+
+
+
+
+
 ## Generate Static Site from Nuxt.js application 
 
 Now we should generate our Nuxt.js static site. So inside our project's root directory let's run:
