@@ -46,27 +46,11 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    transpile: [/^element-ui/],
-    // proxy all webpack dev-server requests starting with /api
-    // to our Spring Boot backend (localhost:8098) using http-proxy-middleware
-    // see https://cli.vuejs.org/config/#devserver-proxy
-    extend(config, { isDev }) {
-      // Sets webpack's mode to development if `isDev` is true.
-      if (isDev) {
-        config.mode = 'development';
-        // Proxy /api to microservice-api-spring-boot Spring Boot backend only in dev
-        const devServer = {
-          proxy: {
-            '/api': {
-              target: 'http://localhost:8098', // this configuration needs to correspond to the Spring Boot backends' application.properties server.port
-              ws: true,
-              changeOrigin: true
-            }
-          }
-        }
-        config.devServer = devServer;
-      }
-    }
+    transpile: [/^element-ui/]
+  },
+
+  env: {
+    baseUrl: process.env.BASE_URL || 'http://localhost:8098'
   },
 
   // see https://composition-api.nuxtjs.org/getting-started/setup &

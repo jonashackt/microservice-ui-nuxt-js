@@ -255,7 +255,65 @@ So inside backend Controller [BackendController.java](https://github.com/jonasha
 > We should change the `allowedOrigins` from the wildcard `*` to a concrete URL as we go to production.
 
 
+### Make baseUrl configurable via environment variables
 
+A common problem is how to make the `baseUrl` variable configurable inside our [axios.ts](plugins/axios.ts):
+
+```javascript
+import axios, {AxiosResponse} from 'axios'
+
+// TODO: We need to make the baseURL configurable through environment variables for sure in the next step!
+const axiosApi = axios.create({
+    //baseURL: `http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api`,
+    baseURL: `http://localhost:8098/api`,
+    timeout: 1000,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Content-Type': 'application/json'
+    }
+});
+```
+
+Using comments isn't elegant in any way - and the production `baseUrl` will differ every time we do a new Pulumi/IaC deployment...
+
+But there's help inside the Nuxt.js docs: https://nuxtjs.org/docs/2.x/configuration-glossary/configuration-env We can use the `env` Property:
+
+> Nuxt.js lets you create environment variables client side, also to be shared from server side.
+
+All we have to do is to add the following lines to our [nuxt.config.js](nuxt.config.js):
+
+```javascript
+  env: {
+    baseUrl: process.env.BASE_URL || 'http://localhost:8098'
+  }
+```
+
+We can even define a default using `||` which comes in really handy for local development where our Spring Boot backend runs on `http://localhost:8098`!
+
+Now inside our [axios.ts](plugins/axios.ts) we can use the `env` property like this:
+
+```javascript
+import axios, {AxiosResponse} from 'axios'
+
+const axiosApi = axios.create({
+    baseURL: process.env.baseUrl,
+    timeout: 1000,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Content-Type': 'application/json'
+    }
+});
+```
+
+The `baseUrl` property that will be equal to the `BASE_URL` server side environment variable if available or defined.
+
+Now on your local dev machine you can create a `BASE_URL` env var like this:
+
+```
+export BASE_URL=http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api
+```
+
+Running `npm run dev` should now use the Fargate URL as definded.
 
 
 ## Generate Static Site from Nuxt.js application 
