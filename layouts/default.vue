@@ -1,13 +1,12 @@
 <template>
   <div>
-    <TheHeader />
     <div id="nav">
       <NuxtLink to="/">Home</NuxtLink> |
       <NuxtLink to="/service">Service</NuxtLink> |
+      <NuxtLink to="/element">Element</NuxtLink> |
       <NuxtLink to="/user">User</NuxtLink>
     </div>
     <Nuxt />
-    <TheFooter />
   </div>
 </template>
 
@@ -16,7 +15,7 @@ html {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 16px;
+  font-size: 20px;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;

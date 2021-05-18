@@ -4,11 +4,29 @@
 [![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
 [![versionnuxtjs](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.dependencies.nuxt&label=nuxt&logo=nuxt.js)](https://nuxtjs.org/)
 
-Example project showing how to create &amp; deploy a Nuxt.js / Vue.js based frontend and how to interact with a Spring Boot microservice
+Example project showing how to create &amp; deploy a Nuxt.js / Vue.js based frontend and how to interact with a Spring Boot microservice (https://github.com/jonashackt/microservice-api-spring-boot)
 
 ![npm-run-dev](screenshots/npm-run-dev.png)
 
 > The purpose of this project is elaborate the differences of a Nuxt.js / SSR or Static Site Generation based project to https://github.com/jonashackt/spring-boot-vuejs
+```shell
+┌────────────────────────────────┐
+│                                │
+│                                │
+│    microservice-ui-nuxt-js     │
+│                                │
+│                                │
+└───────────────┬────────────────┘
+                │
+                │
+┌───────────────▼────────────────┐
+│                                │
+│                                │
+│  microservice-api-spring-boot  │
+│                                │
+│                                │
+└────────────────────────────────┘
+```
 
 ## Universal Web Apps?
 
@@ -34,7 +52,7 @@ There are 3 modes: normal SPA (like Vue), Server Side Rendering (SSR) & Static S
 
 * __SPA__: In this mode, Nuxt.js behaves just like a normal Vue.js application
 * __[Server Side Rendering (SSR)](https://nuxtjs.org/docs/2.x/concepts/server-side-rendering)__: SSR sends fully rendered page from server to the client -> which then gets hydrated (https://ssr.vuejs.org/guide/hydration.html), which means that Vue.js turns the server rendered page into dynamic DOM that can react to client-side data changes
-* __[Static Side Generation](https://nuxtjs.org/docs/2.x/concepts/static-site-generation)__: the application gets rendered during build phase and can then be deployed to any static hosting service (Netlify, GitHub Pages, AWS S3 static site hosting, Static hosting on Azure Storage Accounts etc.). There's no server needed for deployment & the content is delivered via Content Delivery Networks (CDNs). Additionally in Static Side Generation mode there's also [a SPA Fallback for sites that should be rendered on client side and won't be served through the CDN](https://nuxtjs.org/docs/2.x/concepts/static-site-generation#spa-fallback).
+* __[Static Site Generation](https://nuxtjs.org/docs/2.x/concepts/static-site-generation)__: the application gets rendered during build phase and can then be deployed to any static hosting service (Netlify, GitHub Pages, AWS S3 static site hosting, Static hosting on Azure Storage Accounts etc.). There's no server needed for deployment & the content is delivered via Content Delivery Networks (CDNs). Additionally in Static Side Generation mode there's also [a SPA Fallback for sites that should be rendered on client side and won't be served through the CDN](https://nuxtjs.org/docs/2.x/concepts/static-site-generation#spa-fallback).
 
 
 ## Getting Started
@@ -226,27 +244,13 @@ const axiosApi = axios.create({
 });
 ```
 
-
-
+##### Don't forget the backend to get CORS enabled
 
 Our Spring Boot based backend https://github.com/jonashackt/microservice-api-spring-boot needs to support CORS too.
 
 See https://spring.io/guides/gs/rest-service-cors/
 
-So inside the [SpringBootVuejsApplication.java](https://github.com/jonashackt/microservice-api-spring-boot/blob/main/src/main/java/de/jonashackt/springbootvuejs/SpringBootVuejsApplication.java) we need to configure:
-
-```java
-	// Enable CORS globally
-	@Bean
-	public WebMvcConfigurer corsConfigurer() {
-		return new WebMvcConfigurer() {
-			@Override
-			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/api/*").allowedOrigins("*");
-			}
-		};
-	}
-```
+So inside backend Controller [BackendController.java](https://github.com/jonashackt/microservice-api-spring-boot/blob/main/src/main/java/de/jonashackt/springbootvuejs/controller/BackendController.java) we need to use the `org.springframework.web.bind.annotation.CrossOrigin` and should mind our Spring Security configuration also (see https://stackoverflow.com/a/67583232/4964553).
 
 > We should change the `allowedOrigins` from the wildcard `*` to a concrete URL as we go to production.
 
