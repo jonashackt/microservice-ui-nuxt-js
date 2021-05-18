@@ -25,7 +25,8 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    '@/plugins/element-ui'
+    '@/plugins/element-ui',
+    '@/plugins/axios.ts'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -35,14 +36,28 @@ export default {
   buildModules: [
     // https://go.nuxtjs.dev/typescript
     '@nuxt/typescript-build',
+    '@nuxtjs/composition-api/module'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    '@nuxtjs/axios'
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    transpile: [/^element-ui/],
+    transpile: [/^element-ui/]
+  },
+
+  env: {
+    baseUrl: process.env.BASE_URL || 'http://localhost:8098'
+  },
+
+  // see https://composition-api.nuxtjs.org/getting-started/setup &
+  // https://github.com/nuxt-community/composition-api/issues/44
+  generate: {
+    // choose to suit your project
+    interval: 2000,
   }
+
 }
