@@ -613,6 +613,29 @@ Now we should be able to see (and click on) the URL as an environment inside the
 
 ![github-actions-environment-link-s3](screenshots/github-actions-environment-link-s3.png)
 
+
+
+#### Configure BASE_URL of microservice-api-spring-boot in frontend deployment
+
+Initally let's simply define the environment variable `BASE_URL` inside our GitHub Actions workflow [ci.yml](.github/workflows/ci.yml):
+
+```yaml
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+  BASE_URL: "http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api"
+
+...
+```
+
+
 ## Links
 
 Nuxt.js TypeScript Components cookbook: https://typescript.nuxtjs.org/cookbook/components/
