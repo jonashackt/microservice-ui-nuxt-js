@@ -50,7 +50,7 @@ jobs:
         run: npm run generate
 
       - name: Install Pulumi CLI
-        uses: pulumi/action-install-pulumi-cli@v1.1.0
+        uses: pulumi/action-install-pulumi-cli@v1.1.1
 
       - name: Run pulumi preview & pulumi up
         run: |
