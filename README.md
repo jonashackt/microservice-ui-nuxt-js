@@ -636,6 +636,171 @@ env:
 ```
 
 
+
+## Server-Side Rendering (SSR) incl. Node.js Container Build with Paketo
+
+> Here's a great description of the differences between `static` and `server` mode in Nuxt.js: https://nuxtjs.org/blog/going-full-static#commands
+
+Nuxt.js also provides us with a `server` mode inside the [nuxt.config.js](nuxt.config.js):
+
+```json
+export default {
+  // Target: https://go.nuxtjs.dev/config-target
+  target: 'server',
+```
+
+Now instead of using `nuxt generate` (configured inside our `package.json`) or `npm run generate` to generate a static version of our app, we should use `nuxt build` - or `npm run build` to trigger the SSR mode build:
+
+```shell
+$ npm run build
+ℹ Production build                                                                                                                                                                  11:12:27
+ℹ Bundling for server and client side                                                                                                                                               11:12:27
+ℹ Target: server                                                                                                                                                                    11:12:27
+ℹ Using components loader to optimize imports                                                                                                                                       11:12:27
+ℹ Discovered Components: .nuxt/components/readme.md                                                                                                                                 11:12:27
+✔ Builder initialized                                                                                                                                                               11:12:27
+✔ Nuxt files generated
+...
+```
+
+#### Use Paketo.io CNB to build a Node.js Container for our Nuxt app
+
+Be sure to have `pack CLI` installed (see https://buildpacks.io/docs/tools/pack/) and then run:
+
+```shell
+pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+```
+
+I had several errors starting with `node js npm ERR! missing:` and read through https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process
+
+Paketo runs `npm rebuild` when a local `node_modules` directory & `package-lock.json` is present, which ran into the errors. 
+
+Simply deleting the local `node_modules` folder causes Paketo to run a `npm ci` instead, which worked like a charm:
+
+```shell
+$ pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+base: Pulling from paketobuildpacks/builder
+Digest: sha256:3e2ee17348bd901e7e0748e0e1ddccdf8a602b624e418927145b5f84ca26f264
+Status: Image is up to date for paketobuildpacks/builder:base
+base-cnb: Pulling from paketobuildpacks/run
+Digest: sha256:b6b1612ab2dfa294514fff2750e8d724287f81e89d5e91209dbdd562ed7f7daf
+Status: Image is up to date for paketobuildpacks/run:base-cnb
+===> DETECTING
+4 of 7 buildpacks participating
+paketo-buildpacks/ca-certificates 2.2.0
+paketo-buildpacks/node-engine     0.4.0
+paketo-buildpacks/npm-install     0.3.0
+paketo-buildpacks/npm-start       0.2.0
+===> ANALYZING
+Previous image with name "microservice-ui-nuxt-js" not found
+===> RESTORING
+===> BUILDING
+
+Paketo CA Certificates Buildpack 2.2.0
+  https://github.com/paketo-buildpacks/ca-certificates
+  Launch Helper: Contributing to layer
+    Creating /layers/paketo-buildpacks_ca-certificates/helper/exec.d/ca-certificates-helper
+Paketo Node Engine Buildpack 0.4.0
+  Resolving Node Engine version
+    Candidate version sources (in priority order):
+                -> ""
+      <unknown> -> ""
+
+    Selected Node Engine version (using ): 14.17.0
+
+  Executing build process
+    Installing Node Engine 14.17.0
+      Completed in 5.795s
+
+  Configuring build environment
+    NODE_ENV     -> "production"
+    NODE_HOME    -> "/layers/paketo-buildpacks_node-engine/node"
+    NODE_VERBOSE -> "false"
+
+  Configuring launch environment
+    NODE_ENV     -> "production"
+    NODE_HOME    -> "/layers/paketo-buildpacks_node-engine/node"
+    NODE_VERBOSE -> "false"
+
+    Writing profile.d/0_memory_available.sh
+      Calculates available memory based on container limits at launch time.
+      Made available in the MEMORY_AVAILABLE environment variable.
+
+Paketo NPM Install Buildpack 0.3.0
+  Resolving installation process
+    Process inputs:
+      node_modules      -> "Not found"
+      npm-cache         -> "Not found"
+      package-lock.json -> "Found"
+
+    Selected NPM build process: 'npm ci'
+
+  Executing build process
+    Running 'npm ci --unsafe-perm --cache /layers/paketo-buildpacks_npm-install/npm-cache'
+      Completed in 14.988s
+
+  Configuring launch environment
+    NPM_CONFIG_LOGLEVEL -> "error"
+
+  Configuring environment shared by build and launch
+    PATH -> "$PATH:/layers/paketo-buildpacks_npm-install/modules/node_modules/.bin"
+
+
+Paketo NPM Start Buildpack 0.2.0
+  Assigning launch processes
+    web: nuxt start
+
+===> EXPORTING
+Adding layer 'paketo-buildpacks/ca-certificates:helper'
+Adding layer 'paketo-buildpacks/node-engine:node'
+Adding layer 'paketo-buildpacks/npm-install:modules'
+Adding layer 'paketo-buildpacks/npm-install:npm-cache'
+Adding 1/1 app layer(s)
+Adding layer 'launcher'
+Adding layer 'config'
+Adding layer 'process-types'
+Adding label 'io.buildpacks.lifecycle.metadata'
+Adding label 'io.buildpacks.build.metadata'
+Adding label 'io.buildpacks.project.metadata'
+Setting default process type 'web'
+Saving microservice-ui-nuxt-js...
+*** Images (5eb36ba20094):
+      microservice-ui-nuxt-js
+Adding cache layer 'paketo-buildpacks/node-engine:node'
+Adding cache layer 'paketo-buildpacks/npm-install:modules'
+Adding cache layer 'paketo-buildpacks/npm-install:npm-cache'
+Successfully built image microservice-ui-nuxt-js
+```
+
+#### Running our Paketo build Nuxt.js container
+
+Now everything should be straight forward, right?! Simply run our app with:
+
+```shell
+docker run --rm -i --tty -p 3000:3000 microservice-ui-nuxt-js
+```
+
+But this doesn't show up in our browser!
+
+Does it work inside the container? Install curl...
+
+But still not in the browser
+
+
+I came upon it in https://nuxtjs.org/docs/2.x/deployment/deployment-cloud-run
+
+and then read https://medium.com/i22digital/development-setup-with-nuxt-node-and-docker-b008a241c11d
+
+> Last thing is the environment variable HOST . Nuxt needs this variable when started from a container, otherwise you won’t be able to reach it. Host 0.0.0.0 is designated to tell Nuxt to resolve a host address, which is accessible to connections outside of the host machine.
+
+See https://stackoverflow.com/a/67871934/4964553
+
+```shell
+docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 microservice-ui-nuxt-js
+```
+
+
+
 ## Links
 
 Nuxt.js TypeScript Components cookbook: https://typescript.nuxtjs.org/cookbook/components/
