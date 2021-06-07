@@ -886,6 +886,70 @@ Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
 
 It seems that our Paketo build [only runs `npm install` or `npm ci`](https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process), but doesn't run `npm run generate` (which in turn runs `nuxt generate`) to generate our site.
 
+So in order to get our Container working, we need to run the `npm run generate` first (as we did locally) - and then the Paketo build should pick up our build artifacts.
+
+This is not ideal, since there should be everything handled inside the container build - but [reading the docs](https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process) I don't see a hook where I could place the `npm run generate` inside the Paketo build.
+
+So here's the full GitHub Action job:
+
+```yaml
+  nuxt-server-side-nodejs-container-paketo-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: '14'
+
+      - name: Cache node_modules 📦
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Nuxt.js dependencies
+        run: npm install
+
+      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
+        run: npm install
+        working-directory: ./deployment
+
+      - name: Run tests 🧪
+        run: npm run test
+
+      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
+        run: npm run generate
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pack CLI via the official buildpack Action https://github.com/buildpacks/github-actions#setup-pack-cli-action
+        uses: buildpacks/github-actions/setup-pack@v4.1.1
+
+      # Caching Paketo Build see https://stackoverflow.com/a/66598693/4964553
+      # BP_OCI_SOURCE as --env creates the GitHub Container Registry <-> Repository link (https://paketo.io/docs/buildpacks/configuration/#applying-custom-labels)
+      - name: Build app with pack CLI & publish to bc Container Registry
+        run: |
+          pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+              --builder paketobuildpacks/builder:base \
+              --path . \
+              --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
+              --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
+              --publish
+
+```
+
+
 ## Links
 
 Nuxt.js TypeScript Components cookbook: https://typescript.nuxtjs.org/cookbook/components/
