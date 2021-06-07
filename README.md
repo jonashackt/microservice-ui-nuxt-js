@@ -772,7 +772,7 @@ Adding cache layer 'paketo-buildpacks/npm-install:npm-cache'
 Successfully built image microservice-ui-nuxt-js
 ```
 
-#### Running our Paketo build Nuxt.js container
+#### Running our Paketo build Nuxt.js container (the Nuxt HOST configuration)
 
 Now everything should be straight forward, right?! Simply run our app with:
 
@@ -797,6 +797,42 @@ See https://stackoverflow.com/a/67871934/4964553
 
 ```shell
 docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 microservice-ui-nuxt-js
+```
+
+
+#### Running the Paketo build on GitHub Actions
+
+Now simply add a new GitHub Actions job to our [ci.yml](.github/workflows/ci.yml) workflow file:
+
+```yaml
+nuxt-server-side-nodejs-container-paketo-publish:
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout 🛎
+      uses: actions/checkout@master
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install pack CLI via the official buildpack Action https://github.com/buildpacks/github-actions#setup-pack-cli-action
+      uses: buildpacks/github-actions/setup-pack@v4.1.1
+
+    # Caching Paketo Build see https://stackoverflow.com/a/66598693/4964553
+    # BP_OCI_SOURCE as --env creates the GitHub Container Registry <-> Repository link (https://paketo.io/docs/buildpacks/configuration/#applying-custom-labels)
+    - name: Build app with pack CLI & publish to bc Container Registry
+      run: |
+        pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+            --builder paketobuildpacks/builder:base \
+            --path . \
+            --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
+            --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
+            --publish
+
 ```
 
 

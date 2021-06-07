@@ -11,7 +11,7 @@ env:
   BASE_URL: "http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api"
 
 jobs:
-  npm-ci-and-pulumi-deploy:
+  nuxt-static-site-pulumi-aws-s3-deploy:
     runs-on: ubuntu-latest
 
     # Create an environment for the static hosting enabled & Pulumi created S3 Bucket
@@ -74,3 +74,31 @@ jobs:
           pulumi stack output bucketUrl
           echo "::set-output name=s3_url::http://$(pulumi stack output bucketUrl)"
         working-directory: ./deployment
+
+  nuxt-server-side-nodejs-container-paketo-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pack CLI via the official buildpack Action https://github.com/buildpacks/github-actions#setup-pack-cli-action
+        uses: buildpacks/github-actions/setup-pack@v4.1.1
+
+      # Caching Paketo Build see https://stackoverflow.com/a/66598693/4964553
+      # BP_OCI_SOURCE as --env creates the GitHub Container Registry <-> Repository link (https://paketo.io/docs/buildpacks/configuration/#applying-custom-labels)
+      - name: Build app with pack CLI & publish to bc Container Registry
+        run: |
+          pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+              --builder paketobuildpacks/builder:base \
+              --path . \
+              --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
+              --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
+              --publish
