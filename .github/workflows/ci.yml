@@ -46,7 +46,7 @@ jobs:
       - name: Run tests 🧪
         run: npm run test
 
-      - name: Generate Static Site from Nuxt.js application
+      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
         run: npm run generate
 
       - name: Install Pulumi CLI
@@ -81,6 +81,32 @@ jobs:
     steps:
       - name: Checkout 🛎
         uses: actions/checkout@master
+
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: '14'
+
+      - name: Cache node_modules 📦
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Nuxt.js dependencies
+        run: npm install
+
+      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
+        run: npm install
+        working-directory: ./deployment
+
+      - name: Run tests 🧪
+        run: npm run test
+
+      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
+        run: npm run generate
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1

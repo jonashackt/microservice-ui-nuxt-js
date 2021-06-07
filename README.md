@@ -835,7 +835,56 @@ nuxt-server-side-nodejs-container-paketo-publish:
 
 ```
 
+Let's try to run our container which got published to the GitHub Container Registry with:
 
+```shell
+docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+```
+
+This will result in the following error:
+
+```shell
+$ docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+Unable to find image 'ghcr.io/jonashackt/microservice-ui-nuxt-js:latest' locally
+latest: Pulling from jonashackt/microservice-ui-nuxt-js
+d0c52a206d00: Already exists
+1879a9e18f37: Already exists
+1320020c14ba: Already exists
+0c300ce812d0: Pull complete
+09e2d34e431f: Pull complete
+49948b98bd8d: Pull complete
+d18fee29c74f: Pull complete
+49d2052d2301: Pull complete
+feeffabb64e4: Pull complete
+0fae4bb31aa5: Pull complete
+87f3d5cd60d8: Pull complete
+aa7a1571fd83: Pull complete
+0b0022959657: Pull complete
+5a44e4f7b58d: Pull complete
+Digest: sha256:1d1e3125a8fdab6136b490891c7d9717bb9e108a3df870f55f77f64ecea4d597
+Status: Downloaded newer image for ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+
+ FATAL  No build files found in /workspace/.nuxt/dist/server.                                                                                                                       13:09:38
+Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
+
+  Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
+  at VueRenderer._ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/vue-renderer/dist/vue-renderer.js:758:13)
+  at async Server.ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/server/dist/server.js:637:5)
+  at async Nuxt._init (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/core/dist/core.js:482:7)
+
+
+   ╭─────────────────────────────────────────────────────────────────────────────────────╮
+   │                                                                                     │
+   │   ✖ Nuxt Fatal Error                                                                │
+   │                                                                                     │
+   │   Error: No build files found in /workspace/.nuxt/dist/server.                      │
+   │   Use either `nuxt build` or `builder.build()` or start nuxt in development mode.   │
+   │                                                                                     │
+   ╰─────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+
+It seems that our Paketo build [only runs `npm install` or `npm ci`](https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process), but doesn't run `npm run generate` (which in turn runs `nuxt generate`) to generate our site.
 
 ## Links
 
