@@ -1,5 +1,6 @@
 # microservice-ui-nuxt-js
-[![Build Status](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/ci/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[![static-site-pulumi-aws-s3-deploy](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/static-site-pulumi-aws-s3-deploy/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[![server-side-rendering-nodejs-container-paketo](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/server-side-rendering-nodejs-container-paketo/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/jonashackt/spring-boot-vuejs/blob/master/LICENSE)
 [![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
 [![versionnuxtjs](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.dependencies.nuxt&label=nuxt&logo=nuxt.js)](https://nuxtjs.org/)
@@ -427,10 +428,10 @@ There should be all these vars defined:
 
 #### Create GitHub Actions workflow
 
-Let's create a GitHub Actions workflow [preview-and-up.yml](.github/workflows/preview-and-up.yml):
+Let's create a GitHub Actions workflow [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
-name: ci
+name: static-site-pulumi-aws-s3-deploy
 
 on:
   push:
@@ -442,7 +443,7 @@ env:
   PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
 jobs:
-  npm-ci-and-pulumi-deploy:
+  static-site-pulumi-aws-s3-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -579,7 +580,7 @@ Finally we can use the AWS CLI to sync our Nuxt.js generated static site files i
 
 > Running a workflow that references an environment that does not exist will create an environment with the referenced name. The newly created environment will not have any protection rules or secrets configured. Anyone that can edit workflows in the repository can create environments via a workflow file, but only repository admins can configure the environment.
 
-So first we need to define the environment inside our [ci.yml](.github/workflows/ci.yml):
+So first we need to define the environment inside our [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
     environment:
@@ -617,10 +618,10 @@ Now we should be able to see (and click on) the URL as an environment inside the
 
 #### Configure BASE_URL of microservice-api-spring-boot in frontend deployment
 
-Initally let's simply define the environment variable `BASE_URL` inside our GitHub Actions workflow [ci.yml](.github/workflows/ci.yml):
+Initally let's simply define the environment variable `BASE_URL` inside our GitHub Actions workflow [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
-name: ci
+name: static-site-pulumi-aws-s3-deploy
 
 on:
   push:
@@ -633,6 +634,320 @@ env:
   BASE_URL: "http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api"
 
 ...
+```
+
+
+
+## Server-Side Rendering (SSR) incl. Node.js Container Build with Paketo
+
+> Here's a great description of the differences between `static` and `server` mode in Nuxt.js: https://nuxtjs.org/blog/going-full-static#commands
+
+Nuxt.js also provides us with a `server` mode inside the [nuxt.config.js](nuxt.config.js):
+
+```json
+export default {
+  // Target: https://go.nuxtjs.dev/config-target
+  target: 'server',
+```
+
+Now instead of using `nuxt generate` (configured inside our `package.json`) or `npm run generate` to generate a static version of our app, we should use `nuxt build` - or `npm run build` to trigger the SSR mode build:
+
+```shell
+$ npm run build
+ℹ Production build                                                                                                                                                                  11:12:27
+ℹ Bundling for server and client side                                                                                                                                               11:12:27
+ℹ Target: server                                                                                                                                                                    11:12:27
+ℹ Using components loader to optimize imports                                                                                                                                       11:12:27
+ℹ Discovered Components: .nuxt/components/readme.md                                                                                                                                 11:12:27
+✔ Builder initialized                                                                                                                                                               11:12:27
+✔ Nuxt files generated
+...
+```
+
+#### Use Paketo.io CNB to build a Node.js Container for our Nuxt app
+
+Be sure to have `pack CLI` installed (see https://buildpacks.io/docs/tools/pack/) and then run:
+
+```shell
+pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+```
+
+I had several errors starting with `node js npm ERR! missing:` and read through https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process
+
+Paketo runs `npm rebuild` when a local `node_modules` directory & `package-lock.json` is present, which ran into the errors. 
+
+Simply deleting the local `node_modules` folder causes Paketo to run a `npm ci` instead, which worked like a charm:
+
+```shell
+$ pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+base: Pulling from paketobuildpacks/builder
+Digest: sha256:3e2ee17348bd901e7e0748e0e1ddccdf8a602b624e418927145b5f84ca26f264
+Status: Image is up to date for paketobuildpacks/builder:base
+base-cnb: Pulling from paketobuildpacks/run
+Digest: sha256:b6b1612ab2dfa294514fff2750e8d724287f81e89d5e91209dbdd562ed7f7daf
+Status: Image is up to date for paketobuildpacks/run:base-cnb
+===> DETECTING
+4 of 7 buildpacks participating
+paketo-buildpacks/ca-certificates 2.2.0
+paketo-buildpacks/node-engine     0.4.0
+paketo-buildpacks/npm-install     0.3.0
+paketo-buildpacks/npm-start       0.2.0
+===> ANALYZING
+Previous image with name "microservice-ui-nuxt-js" not found
+===> RESTORING
+===> BUILDING
+
+Paketo CA Certificates Buildpack 2.2.0
+  https://github.com/paketo-buildpacks/ca-certificates
+  Launch Helper: Contributing to layer
+    Creating /layers/paketo-buildpacks_ca-certificates/helper/exec.d/ca-certificates-helper
+Paketo Node Engine Buildpack 0.4.0
+  Resolving Node Engine version
+    Candidate version sources (in priority order):
+                -> ""
+      <unknown> -> ""
+
+    Selected Node Engine version (using ): 14.17.0
+
+  Executing build process
+    Installing Node Engine 14.17.0
+      Completed in 5.795s
+
+  Configuring build environment
+    NODE_ENV     -> "production"
+    NODE_HOME    -> "/layers/paketo-buildpacks_node-engine/node"
+    NODE_VERBOSE -> "false"
+
+  Configuring launch environment
+    NODE_ENV     -> "production"
+    NODE_HOME    -> "/layers/paketo-buildpacks_node-engine/node"
+    NODE_VERBOSE -> "false"
+
+    Writing profile.d/0_memory_available.sh
+      Calculates available memory based on container limits at launch time.
+      Made available in the MEMORY_AVAILABLE environment variable.
+
+Paketo NPM Install Buildpack 0.3.0
+  Resolving installation process
+    Process inputs:
+      node_modules      -> "Not found"
+      npm-cache         -> "Not found"
+      package-lock.json -> "Found"
+
+    Selected NPM build process: 'npm ci'
+
+  Executing build process
+    Running 'npm ci --unsafe-perm --cache /layers/paketo-buildpacks_npm-install/npm-cache'
+      Completed in 14.988s
+
+  Configuring launch environment
+    NPM_CONFIG_LOGLEVEL -> "error"
+
+  Configuring environment shared by build and launch
+    PATH -> "$PATH:/layers/paketo-buildpacks_npm-install/modules/node_modules/.bin"
+
+
+Paketo NPM Start Buildpack 0.2.0
+  Assigning launch processes
+    web: nuxt start
+
+===> EXPORTING
+Adding layer 'paketo-buildpacks/ca-certificates:helper'
+Adding layer 'paketo-buildpacks/node-engine:node'
+Adding layer 'paketo-buildpacks/npm-install:modules'
+Adding layer 'paketo-buildpacks/npm-install:npm-cache'
+Adding 1/1 app layer(s)
+Adding layer 'launcher'
+Adding layer 'config'
+Adding layer 'process-types'
+Adding label 'io.buildpacks.lifecycle.metadata'
+Adding label 'io.buildpacks.build.metadata'
+Adding label 'io.buildpacks.project.metadata'
+Setting default process type 'web'
+Saving microservice-ui-nuxt-js...
+*** Images (5eb36ba20094):
+      microservice-ui-nuxt-js
+Adding cache layer 'paketo-buildpacks/node-engine:node'
+Adding cache layer 'paketo-buildpacks/npm-install:modules'
+Adding cache layer 'paketo-buildpacks/npm-install:npm-cache'
+Successfully built image microservice-ui-nuxt-js
+```
+
+#### Running our Paketo build Nuxt.js container (the Nuxt HOST configuration)
+
+Now everything should be straight forward, right?! Simply run our app with:
+
+```shell
+docker run --rm -i --tty -p 3000:3000 microservice-ui-nuxt-js
+```
+
+But this doesn't show up in our browser!
+
+Does it work inside the container? Install curl...
+
+But still not in the browser
+
+
+I came upon it in https://nuxtjs.org/docs/2.x/deployment/deployment-cloud-run
+
+and then read https://medium.com/i22digital/development-setup-with-nuxt-node-and-docker-b008a241c11d
+
+> Last thing is the environment variable HOST . Nuxt needs this variable when started from a container, otherwise you won’t be able to reach it. Host 0.0.0.0 is designated to tell Nuxt to resolve a host address, which is accessible to connections outside of the host machine.
+
+See https://stackoverflow.com/a/67871934/4964553
+
+```shell
+docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 microservice-ui-nuxt-js
+```
+
+
+#### Running the Paketo build on GitHub Actions
+
+Now simply add a new GitHub Actions workflow [server-side-rendering-nodejs-container-paketo.yml](.github/workflows/server-side-rendering-nodejs-container-paketo.yml):
+
+```yaml
+server-side-rendering-nodejs-container-paketo:
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout 🛎
+      uses: actions/checkout@master
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install pack CLI via the official buildpack Action https://github.com/buildpacks/github-actions#setup-pack-cli-action
+      uses: buildpacks/github-actions/setup-pack@v4.1.1
+
+    # Caching Paketo Build see https://stackoverflow.com/a/66598693/4964553
+    # BP_OCI_SOURCE as --env creates the GitHub Container Registry <-> Repository link (https://paketo.io/docs/buildpacks/configuration/#applying-custom-labels)
+    - name: Build app with pack CLI & publish to bc Container Registry
+      run: |
+        pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+            --builder paketobuildpacks/builder:base \
+            --path . \
+            --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
+            --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
+            --publish
+
+```
+
+Let's try to run our container which got published to the GitHub Container Registry with:
+
+```shell
+docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+```
+
+This will result in the following error:
+
+```shell
+$ docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+Unable to find image 'ghcr.io/jonashackt/microservice-ui-nuxt-js:latest' locally
+latest: Pulling from jonashackt/microservice-ui-nuxt-js
+d0c52a206d00: Already exists
+1879a9e18f37: Already exists
+1320020c14ba: Already exists
+0c300ce812d0: Pull complete
+09e2d34e431f: Pull complete
+49948b98bd8d: Pull complete
+d18fee29c74f: Pull complete
+49d2052d2301: Pull complete
+feeffabb64e4: Pull complete
+0fae4bb31aa5: Pull complete
+87f3d5cd60d8: Pull complete
+aa7a1571fd83: Pull complete
+0b0022959657: Pull complete
+5a44e4f7b58d: Pull complete
+Digest: sha256:1d1e3125a8fdab6136b490891c7d9717bb9e108a3df870f55f77f64ecea4d597
+Status: Downloaded newer image for ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
+
+ FATAL  No build files found in /workspace/.nuxt/dist/server.                                                                                                                       13:09:38
+Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
+
+  Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
+  at VueRenderer._ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/vue-renderer/dist/vue-renderer.js:758:13)
+  at async Server.ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/server/dist/server.js:637:5)
+  at async Nuxt._init (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/core/dist/core.js:482:7)
+
+
+   ╭─────────────────────────────────────────────────────────────────────────────────────╮
+   │                                                                                     │
+   │   ✖ Nuxt Fatal Error                                                                │
+   │                                                                                     │
+   │   Error: No build files found in /workspace/.nuxt/dist/server.                      │
+   │   Use either `nuxt build` or `builder.build()` or start nuxt in development mode.   │
+   │                                                                                     │
+   ╰─────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+
+It seems that our Paketo build [only runs `npm install` or `npm ci`](https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process), but doesn't run `npm run generate` (which in turn runs `nuxt generate`) to generate our site.
+
+So in order to get our Container working, we need to run the `npm run generate` first (as we did locally) - and then the Paketo build should pick up our build artifacts.
+
+This is not ideal, since there should be everything handled inside the container build - but [reading the docs](https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process) I don't see a hook where I could place the `npm run generate` inside the Paketo build.
+
+So here's the full GitHub Action job:
+
+```yaml
+  server-side-rendering-nodejs-container-paketo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: '14'
+
+      - name: Cache node_modules 📦
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Nuxt.js dependencies
+        run: npm install
+
+      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
+        run: npm install
+        working-directory: ./deployment
+
+      - name: Run tests 🧪
+        run: npm run test
+
+      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
+        run: npm run generate
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pack CLI via the official buildpack Action https://github.com/buildpacks/github-actions#setup-pack-cli-action
+        uses: buildpacks/github-actions/setup-pack@v4.1.1
+
+      # Caching Paketo Build see https://stackoverflow.com/a/66598693/4964553
+      # BP_OCI_SOURCE as --env creates the GitHub Container Registry <-> Repository link (https://paketo.io/docs/buildpacks/configuration/#applying-custom-labels)
+      - name: Build app with pack CLI & publish to bc Container Registry
+        run: |
+          pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+              --builder paketobuildpacks/builder:base \
+              --path . \
+              --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
+              --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
+              --publish
+
 ```
 
 

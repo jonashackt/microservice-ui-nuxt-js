@@ -1,4 +1,4 @@
-name: ci
+name: static-site-pulumi-aws-s3-deploy
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
   BASE_URL: "http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api"
 
 jobs:
-  npm-ci-and-pulumi-deploy:
+  static-site-pulumi-aws-s3-deploy:
     runs-on: ubuntu-latest
 
     # Create an environment for the static hosting enabled & Pulumi created S3 Bucket
@@ -46,7 +46,7 @@ jobs:
       - name: Run tests 🧪
         run: npm run test
 
-      - name: Generate Static Site from Nuxt.js application
+      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
         run: npm run generate
 
       - name: Install Pulumi CLI
