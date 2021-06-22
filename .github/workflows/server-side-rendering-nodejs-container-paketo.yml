@@ -1,4 +1,4 @@
-name: ci
+name: server-side-rendering-nodejs-container-paketo
 
 on:
   push:
@@ -11,71 +11,7 @@ env:
   BASE_URL: "http://fargatealb-81c02c2-1301929463.eu-central-1.elb.amazonaws.com:8098/api"
 
 jobs:
-  nuxt-static-site-pulumi-aws-s3-deploy:
-    runs-on: ubuntu-latest
-
-    # Create an environment for the static hosting enabled & Pulumi created S3 Bucket
-    environment:
-      name: microservice-ui-nuxt-js-deployment
-      url: ${{ steps.aws-sync.outputs.s3_url }}
-
-    steps:
-      - name: Checkout 🛎
-        uses: actions/checkout@master
-
-      - name: Setup node env 🏗
-        uses: actions/setup-node@v2.1.5
-        with:
-          node-version: '14'
-
-      - name: Cache node_modules 📦
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install Nuxt.js dependencies
-        run: npm install
-
-      - name: Install Pulumi dependencies before npm run generate to prevent it from breaking the build
-        run: npm install
-        working-directory: ./deployment
-
-      - name: Run tests 🧪
-        run: npm run test
-
-      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
-        run: npm run generate
-
-      - name: Install Pulumi CLI
-        uses: pulumi/action-install-pulumi-cli@v1.1.0
-
-      - name: Run pulumi preview & pulumi up
-        run: |
-          pulumi stack select dev
-          pulumi preview
-          pulumi up -y
-        working-directory: ./deployment
-
-      - name: Configure AWS credentials for GitHub pre-installed AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
-
-      - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
-        id: aws-sync
-        run: |
-          aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
-          echo "Access the Nuxt.js app at the following URL:"
-          pulumi stack output bucketUrl
-          echo "::set-output name=s3_url::http://$(pulumi stack output bucketUrl)"
-        working-directory: ./deployment
-
-  nuxt-server-side-nodejs-container-paketo-publish:
+  server-side-rendering-nodejs-container-paketo:
     runs-on: ubuntu-latest
 
     steps:

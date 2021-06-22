@@ -1,5 +1,6 @@
 # microservice-ui-nuxt-js
-[![Build Status](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/ci/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[![static-site-pulumi-aws-s3-deploy](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/static-site-pulumi-aws-s3-deploy/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[![server-side-rendering-nodejs-container-paketo](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/server-side-rendering-nodejs-container-paketo/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/jonashackt/spring-boot-vuejs/blob/master/LICENSE)
 [![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
 [![versionnuxtjs](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.dependencies.nuxt&label=nuxt&logo=nuxt.js)](https://nuxtjs.org/)
@@ -427,10 +428,10 @@ There should be all these vars defined:
 
 #### Create GitHub Actions workflow
 
-Let's create a GitHub Actions workflow [preview-and-up.yml](.github/workflows/preview-and-up.yml):
+Let's create a GitHub Actions workflow [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
-name: ci
+name: static-site-pulumi-aws-s3-deploy
 
 on:
   push:
@@ -442,7 +443,7 @@ env:
   PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
 jobs:
-  npm-ci-and-pulumi-deploy:
+  static-site-pulumi-aws-s3-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -579,7 +580,7 @@ Finally we can use the AWS CLI to sync our Nuxt.js generated static site files i
 
 > Running a workflow that references an environment that does not exist will create an environment with the referenced name. The newly created environment will not have any protection rules or secrets configured. Anyone that can edit workflows in the repository can create environments via a workflow file, but only repository admins can configure the environment.
 
-So first we need to define the environment inside our [ci.yml](.github/workflows/ci.yml):
+So first we need to define the environment inside our [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
     environment:
@@ -617,10 +618,10 @@ Now we should be able to see (and click on) the URL as an environment inside the
 
 #### Configure BASE_URL of microservice-api-spring-boot in frontend deployment
 
-Initally let's simply define the environment variable `BASE_URL` inside our GitHub Actions workflow [ci.yml](.github/workflows/ci.yml):
+Initally let's simply define the environment variable `BASE_URL` inside our GitHub Actions workflow [static-site-pulumi-aws-s3-deploy.yml](.github/workflows/static-site-pulumi-aws-s3-deploy.yml):
 
 ```yaml
-name: ci
+name: static-site-pulumi-aws-s3-deploy
 
 on:
   push:
@@ -802,10 +803,10 @@ docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 microservice-ui-nuxt-
 
 #### Running the Paketo build on GitHub Actions
 
-Now simply add a new GitHub Actions job to our [ci.yml](.github/workflows/ci.yml) workflow file:
+Now simply add a new GitHub Actions workflow [server-side-rendering-nodejs-container-paketo.yml](.github/workflows/server-side-rendering-nodejs-container-paketo.yml):
 
 ```yaml
-nuxt-server-side-nodejs-container-paketo-publish:
+server-side-rendering-nodejs-container-paketo:
   runs-on: ubuntu-latest
 
   steps:
@@ -893,7 +894,7 @@ This is not ideal, since there should be everything handled inside the container
 So here's the full GitHub Action job:
 
 ```yaml
-  nuxt-server-side-nodejs-container-paketo-publish:
+  server-side-rendering-nodejs-container-paketo:
     runs-on: ubuntu-latest
 
     steps:
