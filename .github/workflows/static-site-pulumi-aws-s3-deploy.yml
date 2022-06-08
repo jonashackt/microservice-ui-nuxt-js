@@ -1,8 +1,6 @@
 name: static-site-pulumi-aws-s3-deploy
 
-on:
-  push:
-  pull_request:
+on: [push]
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
