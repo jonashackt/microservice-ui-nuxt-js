@@ -45,9 +45,9 @@ All 3 popular web frameworks support Universal Web Apps:
 
 
 
-## Nuxt.js
+## Nuxt.js rendering modes 
 
-For all concepts see https://nuxtjs.org/docs/2.x/concepts/views
+For all concepts see https://nuxt.com/docs/guide/concepts/rendering
 
 There are 3 modes: normal SPA (like Vue), Server Side Rendering (SSR) & Static Side Generation
 
@@ -58,115 +58,58 @@ There are 3 modes: normal SPA (like Vue), Server Side Rendering (SSR) & Static S
 
 ## Getting Started
 
-See https://nuxtjs.org/docs/2.x/get-started/installation
+See https://nuxt.com/docs/getting-started/installation
+
+If you have `node` and `npm` installed, the `npx` command should also work (see https://linuxtldr.com/npx-package-runner/).
 
 ```shell
-npm init nuxt-app microservice-ui-nuxt-js
+npx nuxi@latest init microservice-ui-nuxt-js
 ```
 
-Now we need to choose something - I opted for TypeScript (is already used in https://github.com/jonashackt/spring-boot-vuejs with Vue.js 3.x).
+A wizard will take you through the setup process.
 
-Then a huge list of UI frameworks pops up:
-
-![nuxt-js-create-ui-frameworks](screenshots/nuxt-js-create-ui-frameworks.png)
-
-There are lot's of options, be it:
-
-* Element https://element-plus.org/#/en-US
-* Framevuerk https://framevuerk.com/
-* Chakra UI https://github.com/chakra-ui/chakra-ui/ (which seems to be more on the React side of things)
-* Bootstrap Vue (which prevents us from using Vue.js 3.x/next (see https://github.com/jonashackt/spring-boot-vuejs#bootstrap-support-for-vuejs-3next))
-
-I went with Element, since it seemed to be widely used (nearly 10k GH stars) and is build with TypeScript + Vue.js 3.x (incl. Composition API) support.
-
-Additionally I chose Axios as HTTP framework, Jest for unit testing and finally chose:
+If you want, you can add some UI candy like Element Plus https://nuxt.com/modules/element-plus (which leverages https://github.com/element-plus/element-plus). In the project root simply run:
 
 ```shell
-? Rendering mode:
-Universal (SSR / SSG)
+npm i element-plus @element-plus/nuxt -D
 ```
 
-over the `Single Page App` possibility (since we want to be able to grasp the differences to a standard SPA with Vue).
+And add the following lines to your [`nuxt.config.ts`](nuxt.config.ts):
 
-Also I chose the`Deployment target` to be `Static (Static/Jamstack hosting)` (we'll have a look onto the `Server (Node.js hosting)` later).
-
-Impressively Nuxt.js also asks which Development (dependabot, jsconfig, Semantic Pull Requests) or CI/CD tools you want to use.
-
-This is my full configuration:
-
-```shell
-create-nuxt-app v3.6.0
-✨  Generating Nuxt.js project in microservice-ui-nuxt-js
-? Project name: microservice-ui-nuxt-js
-? Programming language: TypeScript
-? Package manager: Npm
-? UI framework: Element
-? Nuxt.js modules: (Press <space> to select, <a> to toggle all, <i> to invert selection)
-? Linting tools: (Press <space> to select, <a> to toggle all, <i> to invert selection)
-? Testing framework: Jest
-? Rendering mode: Universal (SSR / SSG)
-? Deployment target: Static (Static/Jamstack hosting)
-? Development tools: (Press <space> to select, <a> to toggle all, <i> to invert selection)
-? Continuous integration: GitHub Actions (GitHub only)
-? What is your GitHub username? jonashackt
-? Version control system: Git
+```typescript
+  modules: [
+    '@element-plus/nuxt'
+  ],
+  elementPlus: { /** Options */ }
 ```
 
 After project generation has finished, let's finally run our project skelleton with:
 
 ```shell
-npm run dev
+npm run dev -- -o
 ```
 
-## Vue.js 3.x with Nuxt.js & TypeScript
+## app.vue and Components, Pages, Layouts
 
-https://dev.to/iamschulz/scaffolding-an-app-with-vue-3-nuxt-and-typescript-51hl
+https://nuxt.com/docs/getting-started/views
 
-> At the time of writing, Nuxt (2.15) still uses Vue 2 by default, but it provides a node package that exposes the Composition API
+> By default, Nuxt will treat this file as the entrypoint and render its content for every route of the application.
 
-We need to add `@nuxtjs/composition-api` ourselves:
+So our file [`app.vue`](app.vue) is the starting point for everything.
 
-```shell
-npm install @nuxtjs/composition-api
-```
+https://nuxt.com/docs/getting-started/views#components
 
-This will enable kind of an beta support for Vue.js 3.x - see https://composition-api.nuxtjs.org/ 
+You can also create reusable Components in the `components` directory, which may be an AppAlert, a Logo or something the like.
 
-It can be removed with the release of Nuxt 3.x.
+https://nuxt.com/docs/getting-started/views#pages
 
-For the full setup docs, see https://composition-api.nuxtjs.org/getting-started/setup
+> Pages represent views for each specific route pattern. Every file in the pages/ directory represents a different route displaying its content.
 
-We also need to add it as `buildModules` to our [nuxt.config.js](nuxt.config.js):
+https://nuxt.com/docs/getting-started/views#layouts
 
-```javascript
-  // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
-  buildModules: [
-    ...
-    '@nuxtjs/composition-api/module'
-  ],
-```
+> Layouts are wrappers around pages that contain a common User Interface for several pages, such as a header and footer display
 
-[Current static-site generation issue](Currently there's an issue with static site generation and async functions which means that you'll need to add time between pages being generated to allow for any async functions to resolve, if you are pre-generating any of your pages):
 
-> Currently there's an issue with static site generation and async functions which means that you'll need to add time between pages being generated to allow for any async functions to resolve, if you are pre-generating any of your pages
-
-So let's add the `generate` configuration to our [nuxt.config.js](nuxt.config.js) also:
-
-```javascript
-  // see https://composition-api.nuxtjs.org/getting-started/setup &
-  // https://github.com/nuxt-community/composition-api/issues/44
-  generate: {
-    // choose to suit your project
-    interval: 2000,
-  }
-```
-
-Now everything is setup to go. We can now use the Vue 3.x style component defintion in our Pages/Views like this in the `script` section:
-
-```javascript
-<script lang="ts">
-import { defineComponent } from "@nuxtjs/composition-api";
-```
 
 
 ## Multiple Nuxt Pages: Routing & Navigation
@@ -193,6 +136,54 @@ So if you come from Vue.js development like me, you may like the following mappi
 * `<router-link` in Nuxt is `<NuxtLink>` (see https://nuxtjs.org/docs/2.x/get-started/routing#navigation)
 * `<router-view/>` is `<Nuxt>`, which is the component you use to display your page components (see https://nuxtjs.org/docs/2.x/features/nuxt-components#the-nuxt-component)
 * the `App.vue` is gone with Nuxt, but there's the `layouts` dir - and the [layouts/default.vue](layouts/default.vue) contains the same page layout as `App.vue` did with Vue! And remember: "The <Nuxt> component can only be used inside layouts." (for layouts see https://nuxtjs.org/docs/2.x/directory-structure/layouts)
+
+
+
+
+## Nuxt.js 3 now features new isomorphic $fetch API based on unjs/ofetch
+
+[As the docs about axios state](https://axios.nuxtjs.org/), there's something new in town for fetching data from an API: https://nuxt.com/docs/getting-started/data-fetching
+
+> Nuxt provides composables to handle data fetching within your application.
+
+> `useFetch` is the most straightforward way to handle data fetching in a component setup function.
+> `$fetch` is great to make network requests based on user interaction.
+> `useAsyncData`, combined with $fetch, offers more fine-grained control.
+
+So no need to install a library ourselves!
+
+Here are the docs for the most used `useFetch` https://nuxt.com/docs/api/composables/use-fetch
+
+Here's a basic example:
+
+```typescript
+<template>
+  <div class="service">
+    <h1>{{ msg }}</h1>
+    <h2>REST service call results</h2>
+
+    <button @click="fetchHelloApi()">CALL Spring Boot REST backend service</button>
+
+    <h4>Backend response: {{ backendResponse }}</h4>
+
+  </div>
+</template>
+
+<script setup lang="ts">
+
+const msg = 'HowTo call REST-Services:'
+const backendResponse = ''
+const errors = []
+
+async function fetchHelloApi() {
+  const backendResponse = await $fetch('/hello')
+  console.log(backendResponse)
+}
+
+</script>
+```
+
+
 
 
 ## Use Axios with Nuxt.js
