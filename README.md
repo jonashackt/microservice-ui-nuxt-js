@@ -56,6 +56,7 @@ There are 3 modes: normal SPA (like Vue), Server Side Rendering (SSR) & Static S
 * __[Static Site Generation](https://nuxtjs.org/docs/2.x/concepts/static-site-generation)__: the application gets rendered during build phase and can then be deployed to any static hosting service (Netlify, GitHub Pages, AWS S3 static site hosting, Static hosting on Azure Storage Accounts etc.). There's no server needed for deployment & the content is delivered via Content Delivery Networks (CDNs). Additionally in Static Side Generation mode there's also [a SPA Fallback for sites that should be rendered on client side and won't be served through the CDN](https://nuxtjs.org/docs/2.x/concepts/static-site-generation#spa-fallback).
 
 
+
 ## Getting Started
 
 See https://nuxt.com/docs/getting-started/installation
@@ -89,6 +90,8 @@ After project generation has finished, let's finally run our project skelleton w
 npm run dev -- -o
 ```
 
+
+
 ## app.vue and Components, Pages, Layouts
 
 https://nuxt.com/docs/getting-started/views
@@ -114,9 +117,30 @@ https://nuxt.com/docs/getting-started/views#layouts
 
 ## Multiple Nuxt Pages: Routing & Navigation
 
-Here we go: https://nuxtjs.org/docs/2.x/get-started/routing
+https://nuxt.com/docs/guide/directory-structure/app#minimal-usage
+
+The CLI generates a file `app.vue`, which is only useful for minimal sites like landing pages without the need for a Vue router:
+
+> "With Nuxt 3, the pages/ directory is optional. If not present, Nuxt won't include vue-router dependency. This is useful when working on a landing page or an application that does not need routing."
+
+If you use `app.vue` together with `/pages` directory, you should use the `<NuxtPage/>` component:
+
+```javascript
+<template>
+  <div>
+    <NuxtLayout>
+      <NuxtPage/>
+    </NuxtLayout>
+  </div>
+</template>
+```
+
+> "`app.vue` acts a the main component of your Nuxt application. Anything you add to it (JS and CSS) will be global and included in every page"
+
 
 #### Automatic Routes
+
+https://nuxt.com/docs/getting-started/routing
 
 > Most websites will have more than one page (i.e. a home page, about page, contact page etc.). In order to show these pages, we need a Router. That's where vue-router comes in. When working with the Vue application, you have to set up a configuration file (i.e. router.js) and add all your routes manually to it. Nuxt.js automatically generates the vue-router configuration for you, based on your provided Vue files inside the pages directory. That means you never have to write a router config again! Nuxt.js also gives you automatic code-splitting for all your routes.
 
@@ -125,9 +149,18 @@ Here we go: https://nuxtjs.org/docs/2.x/get-started/routing
 Pretty cool :) Simply put your `.vue` files into `/pages` dir.
 
 
+#### Where is / mapped to?
+
+https://nuxt.com/docs/guide/directory-structure/pages#usage
+
+> "The pages/index.vue file will be mapped to the / route of your application."
+
+So [`index.vue`](pages/index.vue) is the `HOME` of the site.
+
+
 #### Navigation & where's my App.vue gone aka Layouts
 
-https://nuxtjs.org/docs/2.x/get-started/routing#navigation
+https://nuxt.com/docs/guide/directory-structure/pages#navigation 
 
 > To navigate between pages of your app, you should use the NuxtLink component. This component is included with Nuxt.js and therefore you don't have to import it as you do with other components
 
@@ -135,7 +168,6 @@ So if you come from Vue.js development like me, you may like the following mappi
 
 * `<router-link` in Nuxt is `<NuxtLink>` (see https://nuxtjs.org/docs/2.x/get-started/routing#navigation)
 * `<router-view/>` is `<Nuxt>`, which is the component you use to display your page components (see https://nuxtjs.org/docs/2.x/features/nuxt-components#the-nuxt-component)
-* the `App.vue` is gone with Nuxt, but there's the `layouts` dir - and the [layouts/default.vue](layouts/default.vue) contains the same page layout as `App.vue` did with Vue! And remember: "The <Nuxt> component can only be used inside layouts." (for layouts see https://nuxtjs.org/docs/2.x/directory-structure/layouts)
 
 
 
@@ -185,33 +217,73 @@ async function fetchHelloApi() {
 
 
 
+### Configure baseUrl and Port in Nuxt 3 $fetch API
 
-## Use Axios with Nuxt.js
 
-Here's great documentation: https://nuxtjs.org/docs/2.x/directory-structure/plugins#external-packages
+#### 1.) .evn file
 
-Install axios with:
+https://nuxt.com/docs/guide/directory-structure/env
+
+> if you have a .env file in your project root directory, it will be automatically loaded at dev, build and generate time. Any environment variables set there will be accessible within your nuxt.config file and modules.
+
+Thus we need to create a [`.env`](.env) file:
 
 ```shell
-npm install @nuxtjs/axios
+BASE_URL = http://localhost:8098
 ```
 
-and add it to 2 sections of our  [nuxt.config.js](nuxt.config.js) - `plugins` and `modules`:
+
+#### 2.) runtimeConfig in nuxt.config.ts
+
+https://nuxt.com/docs/guide/going-further/runtime-config#exposing 
+
+> Nuxt provides a runtime config API to expose configuration and secrets within your application.
+
+According to https://stackoverflow.com/a/73636631 add the following to your [`nuxt.config.ts](nuxt.config.ts):
 
 ```javascript
-  // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [
-    '@nuxtjs/axios'
-  ],
-
-// Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [
-    ...
-    '@/plugins/axios.ts'
-  ],
+export default defineNuxtConfig({
+  ...
+  runtimeConfig: {
+    public: {
+      baseUrl: process.env.BASE_URL || 'https://api.example.com/',
+    },
+  },
+  ...
+})
 ```
 
-Now we need to fill the [plugins/axios.ts](plugins/axios.ts) with some HTTP access code (I borrowed it from https://github.com/jonashackt/spring-boot-vuejs/blob/master/frontend/src/api/backend-api.ts).
+
+#### 3.) Use composable 
+
+https://serversideup.net/using-environment-variables-in-nuxt-3/
+
+https://stackoverflow.com/a/75870302
+
+Now we need a composable to add our `baseUrl` every time we want to use `$fetch`. So let's create the `composable` directory, if not already created and than create a file [`useApiFetch.ts`](useApiFetch.ts):
+
+```javascript
+import { useFetch } from "#app"
+
+type useFetchType = typeof useFetch
+
+// wrap useFetch with configuration needed to talk to our API
+export const useAPIFetch: useFetchType = (path, options = {}) => {
+  const config = useRuntimeConfig()
+
+  // baseURL is configured in nuxt.config.ts 
+  options.baseURL = config.public.baseUrl + '/api'
+  return useFetch(path, options)
+}
+```
+
+We now also use `useFetch` instead of directly using `$fetch`. That's why:
+
+https://nuxt.com/docs/api/composables/use-fetch
+
+> `useFetch` is a composable meant to be called directly in a setup function, plugin, or route middleware. It returns reactive composables and handles adding responses to the Nuxt payload so they can be passed from server to client without re-fetching the data on client side when the page hydrates.
+
+
 
 
 ### Configure Axios & Spring Boot to handle CORS/SOP
