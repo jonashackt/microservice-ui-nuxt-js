@@ -1,17 +1,13 @@
 <template>
   <div class="element">
     <h1>{{ msg }}</h1>
-    <h5>REST service call are easy to do with Vue.js, if you know how to do it.</h5>
-    <p></p>
+    <h5>API service calls are easy to do with Vue/Nuxt/$fetch, if you know how to do it.</h5>
     <h6><el-tag>Let´s go!</el-tag> Call a Spring Boot REST backend service, by clicking a button:</h6>
-    <p></p>
-      <el-button type="success" @click="callHelloApi()" id="btnCallHello" icon="el-icon-video-play">Call backend API /hello (HTTP GET)</el-button>
-      <p></p>
-    <h4 border>Backend response:</h4>
-    <span :show="showResponse" dismissible @dismissed="showResponse=false">{{ backendResponse }}</span>
-    <p></p>
+    <el-button type="success" @click="fetchHelloApi" id="btnCallHello" icon="el-icon-video-play">Call backend API /hello (HTTP GET)</el-button>
+    <h4>Backend response:</h4>
+    <h6 :show="showResponse" dismissible @dismissed="showResponse=false">{{ helloMsg }}</h6>
+
     <el-button type="info" @click="showCollapse = !showCollapse" icon="el-icon-unlock">Show Response details</el-button>
-    <p></p>
     <transition name="el-fade-in">
       <div v-show="showCollapse" class="transition-box">
         <el-card border-radius="30px">
@@ -20,23 +16,24 @@
           <el-collapse v-model="collapseHttpStatusFocussed">
             <el-collapse-item title="HTTP Status" name="collapseInnerStatusCode">
               <div>Status: {{ httpStatusCode }}</div>
-              <div>baseURL: {{ responseConfig.baseURL }}</div>
+              <div>baseURL: {{ baseUrl }}</div>
             </el-collapse-item>
           </el-collapse>
 
           <el-collapse>
             <el-collapse-item title="HTTP Headers" name="collapseInnerHeaders">
-              <p v-if="headers && headers.length">
+
+              <p v-if="headers">
                 <li v-for="header of headers">
-              <div>{{ header }}</div>
-              </li>
+                  {{ header }}
+                </li>
               </p>
             </el-collapse-item>
           </el-collapse>
 
           <el-collapse>
             <el-collapse-item title="Full Request configuration" name="collapseInnerResponseConfig">
-              <div>Config: {{ responseConfig }} </div>
+              Config: {{ config }}
             </el-collapse-item>
           </el-collapse>
         </el-card>
@@ -45,68 +42,40 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "@nuxtjs/composition-api";
-import api from "../plugins/axios";
-import {AxiosError, AxiosRequestConfig} from "axios";
+<script setup lang="ts">
 
-interface State {
-  msg: string;
-  showCollapse: boolean,
-  collapseHttpStatusFocussed: string,
-  showResponse: boolean;
-  backendResponse: string;
-  responseConfig: any;
-  httpStatusCode: number;
-  httpStatusText: string;
-  headers: string[];
-  errors: AxiosError[]
+// for el-fade-in see https://element-plus.org/en-US/guide/transitions.html#fade
+import { ref } from 'vue'
+const showCollapse = ref(false)
+
+const msg = 'Nice Element.js candy!'
+const helloMsg = ref('');
+
+var collapseHttpStatusFocussed = "collapseInnerStatusCode"
+var showResponse = false
+var httpStatusCode: number
+
+var headers: Headers
+
+const config = useRuntimeConfig();
+const baseUrl = config.public.baseUrl;
+
+// See https://github.com/nuxt/nuxt/discussions/19447
+async function fetchHelloApi() {
+
+  // see https://github.com/nuxt/nuxt/issues/23635
+  const response = await $fetch(baseUrl + '/api/hello', {
+    raw: true,
+    async onResponse({ response }) {
+      helloMsg.value = response._data;
+      console.log('Headers', response.headers);
+      headers = response.headers
+      httpStatusCode = response.status
+    },
+  });
+  
+  return {response: response};
 }
-
-export default defineComponent({
-  name: 'Element',
-
-  data: (): State => {
-    return {
-      msg: 'Nice Element.js candy!',
-      showCollapse: false,
-      collapseHttpStatusFocussed: "collapseInnerStatusCode",
-      showResponse: false,
-      backendResponse: '',
-      responseConfig: '',
-      httpStatusCode: 0,
-      httpStatusText: '',
-      headers: ['Noting here atm. Did you call the Service?'],
-      errors: []
-    }
-  },
-  methods: {
-    callHelloApi (): any {
-        api.hello().then(response => {
-          this.backendResponse = response.data;
-          this.httpStatusCode = response.status;
-          this.httpStatusText = response.statusText;
-          this.headers = response.headers;
-          this.responseConfig = response.config;
-          this.showResponse=true;
-          this.$notify({
-            title: 'API-Response:',
-            message: this.backendResponse,
-            type: 'success'
-          });
-        })
-        .catch((error: AxiosError) => {
-          this.$notify({
-            title: 'API-Response:',
-            message: 'We experience problems accessing our Spring Boot backend :(',
-            type: 'error'
-          });
-          this.errors.push(error)
-        })
-    }
-  }
-});
-
 </script>
 
 
@@ -133,6 +102,4 @@ li {
 a {
   color: #42b983;
 }
-
-
 </style>
