@@ -170,55 +170,9 @@ So if you come from Vue.js development like me, you may like the following mappi
 * `<router-view/>` is `<Nuxt>`, which is the component you use to display your page components (see https://nuxtjs.org/docs/2.x/features/nuxt-components#the-nuxt-component)
 
 
-
-
-## Nuxt.js 3 now features new isomorphic $fetch API based on unjs/ofetch
-
-[As the docs about axios state](https://axios.nuxtjs.org/), there's something new in town for fetching data from an API: https://nuxt.com/docs/getting-started/data-fetching
-
-> Nuxt provides composables to handle data fetching within your application.
-
-> `useFetch` is the most straightforward way to handle data fetching in a component setup function.
-> `$fetch` is great to make network requests based on user interaction.
-> `useAsyncData`, combined with $fetch, offers more fine-grained control.
-
-So no need to install a library ourselves!
-
-Here are the docs for the most used `useFetch` https://nuxt.com/docs/api/composables/use-fetch
-
-Here's a basic example:
-
-```typescript
-<template>
-  <div class="service">
-    <h1>{{ msg }}</h1>
-    <h2>REST service call results</h2>
-
-    <button @click="fetchHelloApi()">CALL Spring Boot REST backend service</button>
-
-    <h4>Backend response: {{ backendResponse }}</h4>
-
-  </div>
-</template>
-
-<script setup lang="ts">
-
-const msg = 'HowTo call REST-Services:'
-const backendResponse = ''
-const errors = []
-
-async function fetchHelloApi() {
-  const backendResponse = await $fetch('/hello')
-  console.log(backendResponse)
-}
-
-</script>
-```
-
-
+# API calls with Nuxt 3 & useFetch()
 
 ### Configure baseUrl and Port in Nuxt 3 $fetch API
-
 
 #### 1.) .evn file
 
@@ -231,6 +185,8 @@ Thus we need to create a [`.env`](.env) file:
 ```shell
 BASE_URL = http://localhost:8098
 ```
+
+`.env` files aren't checked into source control per default (`.gitignore`). So you need to recreate them in every development environment.
 
 
 #### 2.) runtimeConfig in nuxt.config.ts
@@ -282,6 +238,186 @@ We now also use `useFetch` instead of directly using `$fetch`. That's why:
 https://nuxt.com/docs/api/composables/use-fetch
 
 > `useFetch` is a composable meant to be called directly in a setup function, plugin, or route middleware. It returns reactive composables and handles adding responses to the Nuxt payload so they can be passed from server to client without re-fetching the data on client side when the page hydrates.
+
+
+
+
+## Nuxt.js 3 now features new isomorphic $fetch API based on unjs/ofetch
+
+Here's a great introduction: https://masteringnuxt.com/blog/data-fetching-basics
+
+> "How can I use the return values from useFetch, called in an event handler, in my template?": https://github.com/nuxt/nuxt/discussions/19447
+
+[As the docs about axios state](https://axios.nuxtjs.org/), there's something new in town for fetching data from an API: https://nuxt.com/docs/getting-started/data-fetching
+
+> Nuxt provides composables to handle data fetching within your application.
+
+> `useFetch` is the most straightforward way to handle data fetching in a component setup function.
+> `$fetch` is great to make network requests based on user interaction.
+> `useAsyncData`, combined with $fetch, offers more fine-grained control.
+
+The new fetching API is based on https://unjs.io's https://github.com/unjs/ofetch 
+
+
+Here are the docs for the most used `useFetch` https://nuxt.com/docs/api/composables/use-fetch
+
+Here's a basic example:
+
+```typescript
+<template>
+  <div class="service">
+    <h1>{{ msg }}</h1>
+    <h2>REST service call results</h2>
+
+    <button @click="fetchHelloApi">CALL Spring Boot REST backend service</button>
+    
+    <h4 v-if="!pending && !error">Backend response: {{ helloMsg }}</h4>
+
+    <p v-if="error">Error: {{ error.message }}</p>
+
+  </div>
+</template>
+
+<script setup lang="ts">
+
+const msg = 'HowTo call APIs using Nuxt3 useFetch():';
+
+// If you wanted to call the API on page load, use the following one liner:
+//const { data, pending, error, refresh } = await useAPIFetch('/hello', )
+
+// See https://github.com/nuxt/nuxt/discussions/19447
+async function fetchHelloApi() {
+  const { data, pending, error, refresh } = await useAPIFetch('/hello', );
+  console.log(data);
+  return {data, pending, error};
+}
+// Define what you want to use in <template>
+const {data: helloMsg, pending , error} = await fetchHelloApi();
+</script>
+```
+
+The combination of calling an `async` function and then `await` for it's promise to be filled is described also here https://stackoverflow.com/a/45018619/4964553
+
+
+
+
+### How to declare values & update them from async reactive fetch 
+
+Common errors:
+
+#### ts(2322): Type 'Ref<number | null>' is not assignable to type 'number'.
+
+How to access values from await createNewUser():
+
+```javascript
+interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+};
+
+let user: User = { id: 0, firstName: '', lastName: ''};
+
+...
+
+var userId = await createNewUser();
+
+user.id = userId; // --> ts(2322): Type 'Ref<number | null>' is not assignable to type 'number'.
+```
+
+Solution: get used to `ref()`: https://vuejs.org/guide/essentials/reactivity-fundamentals.html
+
+```javascript
+const count = ref(0)
+
+console.log(count) // { value: 0 }
+console.log(count.value) // 0
+
+count.value++
+console.log(count.value) // 1
+```
+
+And `Why refs?` https://vuejs.org/guide/essentials/reactivity-fundamentals.html#why-refs:
+
+> You might be wondering why we need refs with the .value instead of plain variables. To explain that, we will need to briefly discuss how Vue's reactivity system works. 
+
+> When you use a ref in a template, and change the ref's value later, Vue automatically detects the change and updates the DOM accordingly. This is made possible with a dependency-tracking based reactivity system. When a component is rendered for the first time, Vue tracks every ref that was used during the render. Later on, when a ref is mutated, it will trigger a re-render for components that are tracking it.
+
+> In standard JavaScript, there is no way to detect the access or mutation of plain variables. However, we can intercept the get and set operations of an object's properties using getter and setter methods. The .value property gives Vue the opportunity to detect when a ref has been accessed or mutated.
+
+
+And `useFetch` also returns refs as `Ref<number | null>`.
+
+So in order to access the value returned by `useFetch`, we need to append `.value`:
+
+```javascript
+var userId = await createNewUser();
+
+user.id = userId.value;
+```
+
+
+
+#### ts(2322): Type 'unknown' is not assignable to type 'number'.
+
+```javascript
+interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+};
+
+let user: User = { id: 0, firstName: '', lastName: ''};
+
+async function createNewUser () {
+  const {data: id, pending, error, refresh} = await useAPIFetch(`/user/` + user.firstName + '/' + user.lastName);
+  return id;
+};
+
+var userId = await createNewUser();
+
+user.id = userId.value; // --> ts(2322): Type 'unknown' is not assignable to type 'number'.
+```
+
+Solution: https://stackoverflow.com/a/72529632/4964553
+
+Use `useFetch` with explicit type definition `<number>`:
+
+```javascript
+await useAPIFetch<number>
+```
+
+
+
+#### ts(2322): Type 'number | null' is not assignable to type 'number'
+
+```javascript
+interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+};
+
+let user: User = { id: 0, firstName: '', lastName: ''};
+
+async function createNewUser () {
+  const {data: id, pending, error, refresh} = await useAPIFetch<number>(`/user/` + user.firstName + '/' + user.lastName);
+  return id;
+};
+
+var userId = await createNewUser();
+
+user.id = userId.value; // --> error ts(2322): Type 'number | null' is not assignable to type 'number'
+```
+
+When Typescript is used with strict null checks (see https://www.typescriptlang.org/tsconfig#strictNullChecks), the compiler checks if there could be situations, where your variables are undefined. In this case it emits the error. And it's definitely unclear, if our API responds finally. So we could circumvent this by defining a default value (see https://stackoverflow.com/a/74796026/4964553). In our case the `userId.value` is maybe of type `number`, but maybe not defined. So we use an appended  `|| 0` here:
+
+```javascript
+thisUser.id = userId.value || 0
+```
+
+
+
 
 
 
