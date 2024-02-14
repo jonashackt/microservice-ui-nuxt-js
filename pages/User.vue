@@ -1,5 +1,5 @@
 <template>
-  <div class="user">
+  <div class="element">
     <h1>Create User</h1>
 
     <h3>Just some database interaction...</h3>
@@ -7,82 +7,52 @@
     <input type="text" v-model="user.firstName" placeholder="first name">
     <input type="text" v-model="user.lastName" placeholder="last name">
 
-    <button @click="createNewUser()">Create User</button>
+    <button @click="createNewUser">Create User</button>
 
     <div v-if="showResponse"><h6>User created with Id: {{ user.id }}</h6></div>
 
-    <button v-if="showResponse" @click="retrieveUser()">Retrieve user {{user.id}} data from database</button>
+    <button v-if="showResponse" @click="retrieveUser">Retrieve user {{user.id }} data from database</button>
 
     <h4 v-if="showRetrievedUser">Retrieved User {{retrievedUser.firstName}} {{retrievedUser.lastName}}</h4>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "@nuxtjs/composition-api";
-import api from "../plugins/axios";
-import {AxiosError} from "axios";
+<script setup lang="ts">
 
-interface State {
-  user: {
-    id: number
-    firstName: string,
+import { ref } from 'vue'
+
+const showResponse = ref(false);
+const showRetrievedUser = ref(false);
+
+interface User {
+    id: number;
+    firstName: string;
     lastName: string;
-  };
-  retrievedUser: {
-    id: number
-    firstName: string,
-    lastName: string;
-  };
-  showResponse: boolean;
-  showRetrievedUser: boolean;
-  errors: AxiosError[]
-}
+};
 
-export default defineComponent({
-  name: 'User',
+let user = ref({ id: 0, firstName: '', lastName: ''});
 
-  data: (): State => {
-    return {
-      errors: [],
-      user: {
-        id: 0,
-        firstName: '',
-        lastName: ''
-      },
-      showResponse: false,
-      retrievedUser: {
-        id: 0,
-        firstName: '',
-        lastName: ''
-      },
-      showRetrievedUser: false
-    }
-  },
-  methods: {
-    // Fetches posts when the view is created.
-    createNewUser () {
-      api.createUser(this.user.firstName, this.user.lastName).then(response => {
-          // JSON responses are automatically parsed.
-          this.user.id = response.data;
-          console.log('Created new User with Id ' + response.data);
-          this.showResponse = true
-        })
-        .catch(e => {
-          this.errors.push(e)
-        })
-    },
-    retrieveUser () {
-      api.getUser(this.user.id).then(response => {
-          // JSON responses are automatically parsed.
-          this.retrievedUser = response.data;
-          this.showRetrievedUser = true
-        })
-        .catch((error: AxiosError):void => {
-          this.errors.push(error)
-        })
-    }
-  }
-});
+async function createNewUser () {
+
+  const {data: id, pending, error} = await useAPIFetch<number>(`/user/` + user.value.firstName + '/' + user.value.lastName, {
+    method: 'post'
+  });
+  console.log('Created new User with Id ' + id.value);
+  showResponse.value = true;
+
+  user.value.id = id.value || 0;
+};
+
+let retrievedUser = ref({ id: 0, firstName: '', lastName: ''});
+
+async function retrieveUser () {
+
+  const {data: respondedUser, pending, error} = await useAPIFetch<User>(`/user/` + user.value.id);
+  showRetrievedUser.value = true;
+
+  retrievedUser.value = respondedUser.value || { id: 0, firstName: '', lastName: ''};
+};
+
 </script>
 
 

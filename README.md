@@ -202,7 +202,7 @@ export default defineNuxtConfig({
   ...
   runtimeConfig: {
     public: {
-      baseUrl: process.env.BASE_URL || 'https://api.example.com/',
+      baseUrl: process.env.BASE_URL || 'http://localhost:8098',
     },
   },
   ...
@@ -474,6 +474,9 @@ The type is automatically inferred. We could alternatively write the equivalent:
 ```javascript
 let user: Ref<User> = ref({ id: 0, firstName: '', lastName: ''});
 ```
+
+
+
 
 
 

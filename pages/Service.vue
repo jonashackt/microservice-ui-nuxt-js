@@ -3,47 +3,35 @@
     <h1>{{ msg }}</h1>
     <h2>REST service call results</h2>
 
-    <button @click="callHelloApi()">CALL Spring Boot REST backend service</button>
+    <button @click="fetchHelloApi">CALL Spring Boot REST backend service</button>
+    
+    <h4 v-if="!apiCallPending && !apiCallError">Backend response: {{ helloMsg }}</h4>
 
-    <h4>Backend response: {{ backendResponse }}</h4>
+    <p v-if="apiCallError">Error: {{ apiCallError.message }}</p>
 
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "@nuxtjs/composition-api";
-import api from "../plugins/axios";
-import {AxiosError} from "axios";
+<script setup lang="ts">
 
-interface State {
-  msg: string;
-  backendResponse: string;
-  errors: AxiosError[]
+const msg = 'HowTo call APIs using Nuxt3 useFetch():';
+
+// If you wanted to call the API on page load, use the following one liner:
+//const { data, pending, error, refresh } = await useAPIFetch('/hello', )
+
+const helloMsg = ref('');
+let apiCallPending = ref(false);
+let apiCallError: any;
+
+// See https://github.com/nuxt/nuxt/discussions/19447
+async function fetchHelloApi() {
+  const { data, pending, error } = await useAPIFetch<string>('/hello', );
+  console.log(data);
+  helloMsg.value = data.value || '';
+  apiCallPending = pending;
+  apiCallError = error;
 }
 
-export default defineComponent({
-  name: 'Service',
-
-  data: (): State => {
-    return {
-      msg: 'HowTo call REST-Services:',
-      backendResponse: '',
-      errors: []
-    }
-  },
-  methods: {
-    // Fetches posts when the component is created.
-    callHelloApi () {
-      api.hello().then(response => {
-          this.backendResponse = response.data;
-          console.log(response.data)
-      })
-      .catch((error: AxiosError) => {
-        this.errors.push(error)
-      })
-    }
-  }
-});
 </script>
 
 
@@ -66,4 +54,10 @@ export default defineComponent({
   a {
     color: #42b983;
   }
+
+  .service {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 </style>
