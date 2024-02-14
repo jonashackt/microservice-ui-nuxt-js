@@ -271,9 +271,9 @@ Here's a basic example:
 
     <button @click="fetchHelloApi">CALL Spring Boot REST backend service</button>
     
-    <h4 v-if="!pending && !error">Backend response: {{ helloMsg }}</h4>
+    <h4 v-if="!apiCallPending && !apiCallError">Backend response: {{ helloMsg }}</h4>
 
-    <p v-if="error">Error: {{ error.message }}</p>
+    <p v-if="apiCallError">Error: {{ apiCallError.message }}</p>
 
   </div>
 </template>
@@ -282,17 +282,18 @@ Here's a basic example:
 
 const msg = 'HowTo call APIs using Nuxt3 useFetch():';
 
-// If you wanted to call the API on page load, use the following one liner:
-//const { data, pending, error, refresh } = await useAPIFetch('/hello', )
+const helloMsg = ref('');
+let apiCallPending = ref(false);
+let apiCallError: any;
 
 // See https://github.com/nuxt/nuxt/discussions/19447
 async function fetchHelloApi() {
-  const { data, pending, error, refresh } = await useAPIFetch('/hello', );
+  const { data, pending, error } = await useAPIFetch<string>('/hello', );
   console.log(data);
-  return {data, pending, error};
+  helloMsg.value = data.value || '';
+  apiCallPending = pending;
+  apiCallError = error;
 }
-// Define what you want to use in <template>
-const {data: helloMsg, pending , error} = await fetchHelloApi();
 </script>
 ```
 
@@ -303,7 +304,7 @@ The combination of calling an `async` function and then `await` for it's promise
 
 ### How to declare values & update them from async reactive fetch 
 
-Common errors:
+Common errors while using the new Nuxt 3 fetch api (ofetch):
 
 #### ts(2322): Type 'Ref<number | null>' is not assignable to type 'number'.
 
@@ -325,28 +326,7 @@ var userId = await createNewUser();
 user.id = userId; // --> ts(2322): Type 'Ref<number | null>' is not assignable to type 'number'.
 ```
 
-Solution: get used to `ref()`: https://vuejs.org/guide/essentials/reactivity-fundamentals.html
-
-```javascript
-const count = ref(0)
-
-console.log(count) // { value: 0 }
-console.log(count.value) // 0
-
-count.value++
-console.log(count.value) // 1
-```
-
-And `Why refs?` https://vuejs.org/guide/essentials/reactivity-fundamentals.html#why-refs:
-
-> You might be wondering why we need refs with the .value instead of plain variables. To explain that, we will need to briefly discuss how Vue's reactivity system works. 
-
-> When you use a ref in a template, and change the ref's value later, Vue automatically detects the change and updates the DOM accordingly. This is made possible with a dependency-tracking based reactivity system. When a component is rendered for the first time, Vue tracks every ref that was used during the render. Later on, when a ref is mutated, it will trigger a re-render for components that are tracking it.
-
-> In standard JavaScript, there is no way to detect the access or mutation of plain variables. However, we can intercept the get and set operations of an object's properties using getter and setter methods. The .value property gives Vue the opportunity to detect when a ref has been accessed or mutated.
-
-
-And `useFetch` also returns refs as `Ref<number | null>`.
+Solution: `useFetch` returns refs as `Ref<number | null>`.
 
 So in order to access the value returned by `useFetch`, we need to append `.value`:
 
@@ -418,7 +398,82 @@ thisUser.id = userId.value || 0
 
 
 
+#### The UI (<template>) doesn't get updated
 
+We have the following in our template:
+
+```html
+<button @click="createNewUser">Create User</button>
+
+<div v-if="showResponse"><h6>User created with Id: {{ user.id }}</h6></div>
+```
+
+with the `<script setup lang="ts">` section:
+
+```javascript
+var showResponse: boolean = false;
+
+async function createNewUser () {
+
+  const {data: id, pending, error} = await useAPIFetch<number>(`/user/` + user.firstName + '/' + user.lastName, {
+    method: 'post'
+  });
+  ...
+  showResponse = true;
+  ...
+};
+```
+
+Now clicking on the `Create User` button, doesn't update the UI :(
+
+Solution: We need to use `ref()` here! And `Why refs?` https://vuejs.org/guide/essentials/reactivity-fundamentals.html#why-refs:
+
+> You might be wondering why we need refs with the .value instead of plain variables. To explain that, we will need to briefly discuss how Vue's reactivity system works. 
+
+> When you use a ref in a template, and change the ref's value later, Vue automatically detects the change and updates the DOM accordingly. This is made possible with a dependency-tracking based reactivity system. When a component is rendered for the first time, Vue tracks every ref that was used during the render. Later on, when a ref is mutated, it will trigger a re-render for components that are tracking it.
+
+> In standard JavaScript, there is no way to detect the access or mutation of plain variables. However, we can intercept the get and set operations of an object's properties using getter and setter methods. The .value property gives Vue the opportunity to detect when a ref has been accessed or mutated.
+
+
+Luckily our template can stay the same:
+
+> Notice that we did not need to append .value when using the ref in the template. For convenience, refs are automatically unwrapped when used inside templates
+
+But our `script` section now changes slightly:
+
+```javascript
+import { ref } from 'vue'
+
+const showResponse = ref(false);
+
+async function createNewUser () {
+
+  const {data: id, pending, error} = await useAPIFetch<number>(`/user/` + user.firstName + '/' + user.lastName, {
+    method: 'post'
+  });
+  ...
+  showResponse.value = true;
+  ...
+};
+```
+
+Now our UI gets updated as expected :)
+
+Also we need to use `ref()` for our User objects:
+
+```javascript
+// from this
+let user: User = { id: 0, firstName: '', lastName: ''};
+
+// to this
+let user = ref({ id: 0, firstName: '', lastName: ''});
+```
+
+The type is automatically inferred. We could alternatively write the equivalent:
+
+```javascript
+let user: Ref<User> = ref({ id: 0, firstName: '', lastName: ''});
+```
 
 
 
