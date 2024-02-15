@@ -47,14 +47,27 @@ All 3 popular web frameworks support Universal Web Apps:
 
 ## Nuxt.js rendering modes 
 
-For all concepts see https://nuxt.com/docs/guide/concepts/rendering
+For all concepts see https://vueschool.io/articles/vuejs-tutorials/hybrid-rendering-in-nuxt-js-3/
 
-There are 3 modes: normal SPA (like Vue), Server Side Rendering (SSR) & Static Side Generation
+[There are 4 modes now with Nuxt 3](https://nuxt.com/docs/guide/concepts/rendering): Universal Rendering (aka Server Side Rendering (SSR)), Client Side Rendering (aka Static Site Generation, Hybrid Rendering & Edge-Side Rendering
 
-* __SPA__: In this mode, Nuxt.js behaves just like a normal Vue.js application
-* __[Server Side Rendering (SSR)](https://nuxtjs.org/docs/2.x/concepts/server-side-rendering)__: SSR sends fully rendered page from server to the client -> which then gets hydrated (https://ssr.vuejs.org/guide/hydration.html), which means that Vue.js turns the server rendered page into dynamic DOM that can react to client-side data changes
-* __[Static Site Generation](https://nuxtjs.org/docs/2.x/concepts/static-site-generation)__: the application gets rendered during build phase and can then be deployed to any static hosting service (Netlify, GitHub Pages, AWS S3 static site hosting, Static hosting on Azure Storage Accounts etc.). There's no server needed for deployment & the content is delivered via Content Delivery Networks (CDNs). Additionally in Static Side Generation mode there's also [a SPA Fallback for sites that should be rendered on client side and won't be served through the CDN](https://nuxtjs.org/docs/2.x/concepts/static-site-generation#spa-fallback).
 
+* __[Universal Rendering (aka Server Side Rendering (SSR))](https://nuxt.com/docs/guide/concepts/rendering#universal-rendering)__: SSR sends fully rendered page from server to the client -> which then gets **hydrated** (https://vuejs.org/guide/scaling-up/ssr.html), which means that Vue.js turns the server rendered page into dynamic DOM that can react to client-side data changes
+
+* __[Client Side Rendering (aka Static Site Generation)](https://nuxt.com/docs/guide/concepts/rendering#client-side-rendering)__: the application gets rendered during build phase and can then be deployed to any static hosting service (Netlify, GitHub Pages, AWS S3 static site hosting, Static hosting on Azure Storage Accounts etc.). There's no server needed for deployment & the content is delivered via Content Delivery Networks (CDNs). Additionally in Static Side Generation mode there's also [a SPA Fallback for sites that should be rendered on client side and won't be served through the CDN](https://nuxtjs.org/docs/2.x/concepts/static-site-generation#spa-fallback).
+
+Client Side Rendering aka Static Site Generation can be enabled inside the [`nuxt.config.ts`](nuxt.config.ts):
+
+```typescript
+export default defineNuxtConfig({
+  ssr: false
+})
+// If you do use ssr: false, you should also place an HTML file in ~/app/spa-loading-template.html with some HTML you would like to use to render a loading screen that will be rendered until your app is hydrated.
+```
+
+* Hybrid Rendering: Route Rules to decide which rendering method to use for every route
+
+* Edge-Side Rendering: With ESR, the rendering process is pushed to the 'edge' of the network - the CDN's edge servers. ESR is more a deployment target than an actual rendering mode.
 
 
 ## Getting Started
@@ -1186,6 +1199,27 @@ See https://stackoverflow.com/a/67871934/4964553
 docker run --rm -i --tty --env "HOST=0.0.0.0" -p 3000:3000 microservice-ui-nuxt-js
 ```
 
+Another problem arose after upgrading to Nuxt 3.x / Vue.js 3.x: 
+
+Executing the `docker run` gave a:
+
+```shell
+ERROR: failed to launch: determine start command: when there is no default process a command is required
+```
+
+Luckily I stumbled upon the depts of the Paketo node.js docs, where it is described [how to specify a custom entrypoint right at the Paketo build time](https://paketo.io/docs/howto/nodejs/#specify-a-custom-entrypoint) - for more details see https://stackoverflow.com/a/78000323/4964553
+
+So a working `docker run` could be achieved by using the following `pack build` command:
+
+```shell
+pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
+          --builder paketobuildpacks/builder-jammy-base \
+          --env BP_LAUNCHPOINT=".output/server/index.mjs" \
+          --path . 
+```
+
+
+
 
 #### Running the Paketo build on GitHub Actions
 
@@ -1310,8 +1344,8 @@ So here's the full GitHub Action job:
       - name: Run tests 🧪
         run: npm run test
 
-      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
-        run: npm run generate
+      - name: Generate Static Site from Nuxt.js application (nuxt build, see package.json)
+        run: npm run build
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
