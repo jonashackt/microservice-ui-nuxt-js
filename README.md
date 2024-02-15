@@ -138,7 +138,7 @@ If you use `app.vue` together with `/pages` directory, you should use the `<Nuxt
 > "`app.vue` acts a the main component of your Nuxt application. Anything you add to it (JS and CSS) will be global and included in every page"
 
 
-#### Automatic Routes
+### Automatic Routes
 
 https://nuxt.com/docs/getting-started/routing
 
@@ -149,7 +149,7 @@ https://nuxt.com/docs/getting-started/routing
 Pretty cool :) Simply put your `.vue` files into `/pages` dir.
 
 
-#### Where is / mapped to?
+### Where is / mapped to?
 
 https://nuxt.com/docs/guide/directory-structure/pages#usage
 
@@ -158,7 +158,7 @@ https://nuxt.com/docs/guide/directory-structure/pages#usage
 So [`index.vue`](pages/index.vue) is the `HOME` of the site.
 
 
-#### Navigation & where's my App.vue gone aka Layouts
+### Navigation & where's my App.vue gone aka Layouts
 
 https://nuxt.com/docs/guide/directory-structure/pages#navigation 
 
@@ -168,6 +168,135 @@ So if you come from Vue.js development like me, you may like the following mappi
 
 * `<router-link` in Nuxt is `<NuxtLink>` (see https://nuxtjs.org/docs/2.x/get-started/routing#navigation)
 * `<router-view/>` is `<Nuxt>`, which is the component you use to display your page components (see https://nuxtjs.org/docs/2.x/features/nuxt-components#the-nuxt-component)
+
+
+
+
+# Testing with Nuxt and Vitest 
+
+https://nuxt.com/docs/getting-started/testing
+
+https://dev.to/tao/adding-vitest-to-nuxt-3-2023-lpa  
+
+After I used jest some time ago, there's a new testing framework in town: https://vitest.dev
+
+### Install dependencies
+
+First we need to add Testing capabilities to our Nuxt project:
+
+```shell
+npm i --save-dev @nuxt/test-utils vitest @vue/test-utils happy-dom playwright-core
+```
+
+### Add Vitest integration to Nuxt DevTools via nuxt.config.ts
+
+Now we can add `@nuxt/test-utils/module` to our [`nuxt.config.ts`](nuxt.config.ts) (optional). This adds a Vitest integration to our Nuxt DevTools which supports running our unit tests in development:
+
+```typescript
+export default defineNuxtConfig({
+  devtools: { enabled: true },
+
+  modules: [
+    '@element-plus/nuxt',
+    '@nuxt/test-utils/module'
+  ],
+  ...
+})
+```
+
+### Create vitest.config.ts
+
+We also need to create a [`vitest.config.ts`](vitest.config.ts):
+
+```typescript
+import { defineVitestConfig } from '@nuxt/test-utils/config'
+
+export default defineVitestConfig({
+  // any custom Vitest config you require
+})
+```
+
+Here [the Nuxt docs](https://nuxt.com/docs/getting-started/testing#setup) are a bit vary and if you leave out the configuration, you get the following error (see https://stackoverflow.com/a/70771291/4964553):
+
+```shell
+ FAIL  test/Logo.spec.ts > Logo > is a Vue instance
+ReferenceError: document is not defined
+```
+
+To fix this, configure `happy-dom` (or `jsdom`, if you installed that alternatively):
+
+```typescript
+import { defineVitestConfig } from '@nuxt/test-utils/config'
+
+export default defineVitestConfig({
+  // any custom Vitest config you require
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+  },
+})
+```
+
+
+
+### Add test goal to package.json
+
+We also need to have a `npm run test` goal, that will execute our tests e.g. in CI. Therefore add the following line to your [`package.json`](package.json):
+
+```json
+  "scripts": {
+    ...
+    "test": "vitest",
+    ...
+```
+
+### Write our first testcase
+
+As already used from jest we create a new test case in the `/test` directory (which we need to create beforehand). As an example here I use [`Logo.spec.ts`](test/Logo.spec.ts):
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+
+import Logo from '../components/Logo.vue'
+
+describe('Logo', () => {
+  it('is a Vue instance', () => {
+    const wrapper = mount(Logo)
+    expect(wrapper.vm).toBeTruthy()
+  })
+})
+```
+
+### Run our test
+
+Now we can finally run our test using `npm run test`:
+
+```shell
+$ npm run test
+
+> test
+> vitest
+
+ DEV  v1.2.2 /home/jonashackt/dev/microservice-ui-nuxt-js
+
+ ✓ test/Logo.spec.ts (1)
+   ✓ Logo (1)
+     ✓ is a Vue instance
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  10:20:20
+   Duration  523ms (transform 127ms, setup 10ms, collect 103ms, tests 11ms, environment 117ms, prepare 89ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+```
+
+
+
+
 
 
 # API calls with Nuxt 3 & useFetch()
@@ -926,7 +1055,7 @@ $ npm run build
 Be sure to have `pack CLI` installed (see https://buildpacks.io/docs/tools/pack/) and then run:
 
 ```shell
-pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder-jammy-base
 ```
 
 I had several errors starting with `node js npm ERR! missing:` and read through https://paketo.io/docs/buildpacks/language-family-buildpacks/nodejs/#npm-installation-process
@@ -936,10 +1065,10 @@ Paketo runs `npm rebuild` when a local `node_modules` directory & `package-lock.
 Simply deleting the local `node_modules` folder causes Paketo to run a `npm ci` instead, which worked like a charm:
 
 ```shell
-$ pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder:base
+$ pack build microservice-ui-nuxt-js --path . --builder paketobuildpacks/builder-jammy-base
 base: Pulling from paketobuildpacks/builder
 Digest: sha256:3e2ee17348bd901e7e0748e0e1ddccdf8a602b624e418927145b5f84ca26f264
-Status: Image is up to date for paketobuildpacks/builder:base
+Status: Image is up to date for paketobuildpacks/builder-jammy-base
 base-cnb: Pulling from paketobuildpacks/run
 Digest: sha256:b6b1612ab2dfa294514fff2750e8d724287f81e89d5e91209dbdd562ed7f7daf
 Status: Image is up to date for paketobuildpacks/run:base-cnb
@@ -1085,7 +1214,7 @@ server-side-rendering-nodejs-container-paketo:
     - name: Build app with pack CLI & publish to bc Container Registry
       run: |
         pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
-            --builder paketobuildpacks/builder:base \
+            --builder paketobuildpacks/builder-jammy-base \
             --path . \
             --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
             --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
@@ -1199,7 +1328,7 @@ So here's the full GitHub Action job:
       - name: Build app with pack CLI & publish to bc Container Registry
         run: |
           pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
-              --builder paketobuildpacks/builder:base \
+              --builder paketobuildpacks/builder-jammy-base \
               --path . \
               --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
               --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
