@@ -19,7 +19,7 @@ jobs:
       - name: Setup node env 🏗
         uses: actions/setup-node@v3.5.1
         with:
-          node-version: '16'
+          node-version: '20'
 
       - name: Cache node_modules 📦
         uses: actions/cache@v3
@@ -57,7 +57,7 @@ jobs:
       - name: Build app with pack CLI & publish to bc Container Registry
         run: |
           pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
-              --builder paketobuildpacks/builder:base \
+              --builder paketobuildpacks/builder-jammy-base \
               --path . \
               --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
               --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
