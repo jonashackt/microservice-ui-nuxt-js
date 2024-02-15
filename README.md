@@ -727,15 +727,58 @@ npm run generate
 This will result in a normal NPM build, followed by the static site generation:
 
 ```shell
-ℹ Full static generation activated                                                                                                                                                  10:42:26
-ℹ Generating output directory: dist/                                                                                                                                                10:42:26
-ℹ Generating pages with full static mode                                                                                                                                            10:42:26
-✔ Generated route "/"                                                                                                                                                               10:42:27
-✔ Client-side fallback created: 200.html                                                                                                                                            10:42:27
-✔ Static manifest generated
+
+> generate
+> nuxt generate
+
+Nuxt 3.9.3 with Nitro 2.8.1                                                                                                                                                                            2:33:39 PM
+ℹ Using Nitro server preset: static                                                                                                                                                                   2:33:39 PM
+ℹ Building client...                                                                                                                                                                                  2:33:41 PM
+ℹ vite v5.0.11 building for production...                                                                                                                                                             2:33:41 PM
+ℹ ✓ 1553 modules transformed.                                                                                                                                                                         2:33:44 PM
+Inspect report generated at /home/jonashackt/dev/microservice-ui-nuxt-js/.nuxt/analyze/.vite-inspect
+ℹ .nuxt/dist/client/manifest.json                     2.94 kB │ gzip:  0.58 kB                                                                                                                        2:33:44 PM
+...
+ℹ .nuxt/dist/client/_nuxt/useAPIFetch.77dgfZ2z.js    12.37 kB │ gzip:  5.06 kB                                                                                                                        2:33:44 PM
+ℹ .nuxt/dist/client/_nuxt/Element.70MerkGn.js        29.38 kB │ gzip: 10.27 kB                                                                                                                        2:33:44 PM
+ℹ .nuxt/dist/client/_nuxt/entry.FHaf2s3N.js         158.96 kB │ gzip: 60.07 kB                                                                                                                        2:33:44 PM
+ℹ ✓ built in 3.46s                                                                                                                                                                                    2:33:44 PM
+✔ Client built in 3473ms                                                                                                                                                                              2:33:44 PM
+ℹ Building server...                                                                                                                                                                                  2:33:44 PM
+ℹ vite v5.0.11 building SSR bundle for production...                                                                                                                                                  2:33:44 PM
+ℹ ✓ 825 modules transformed.                                                                                                                                                                          2:33:46 PM
+Inspect report generated at /home/jonashackt/dev/microservice-ui-nuxt-js/.nuxt/analyze/.vite-inspect
+ℹ .nuxt/dist/server/_nuxt/entry-styles.r_RyA2SE.mjs            0.08 kB                                                                                                                                2:33:46 PM
+ℹ .nuxt/dist/server/_nuxt/User-styles.J7VmNqcw.mjs             0.14 kB                                                                                                                                2:33:46 PM
+...
+ℹ .nuxt/dist/server/_nuxt/Element-vW6V9Woz.js                 40.91 kB │ map:  72.14 kB                                                                                                               2:33:46 PM
+ℹ .nuxt/dist/server/server.mjs                                49.94 kB │ map: 115.45 kB                                                                                                               2:33:46 PM
+ℹ ✓ built in 2.19s                                                                                                                                                                                    2:33:46 PM
+✔ Server built in 2198ms                                                                                                                                                                              2:33:46 PM
+ℹ Initializing prerenderer                                                                                                                                                                      nitro 2:33:46 PM
+ℹ Prerendering 6 initial routes with crawler                                                                                                                                                    nitro 2:33:47 PM
+  ├─ /Service (72ms)                                                                                                                                                                             nitro 2:33:47 PM
+  ├─ /200.html (71ms)                                                                                                                                                                            nitro 2:33:47 PM
+  ├─ /User (73ms)                                                                                                                                                                                nitro 2:33:47 PM
+  ├─ /404.html (71ms)                                                                                                                                                                            nitro 2:33:47 PM
+  ├─ /Element (78ms)                                                                                                                                                                             nitro 2:33:47 PM
+  ├─ / (76ms)                                                                                                                                                                                    nitro 2:33:47 PM
+  ├─ /service (17ms)                                                                                                                                                                             nitro 2:33:47 PM
+  ├─ /user (8ms)                                                                                                                                                                                 nitro 2:33:47 PM
+  ├─ /element (14ms)                                                                                                                                                                             nitro 2:33:47 PM
+  ├─ /Service/_payload.json (18ms)                                                                                                                                                               nitro 2:33:47 PM
+  ├─ /User/_payload.json (7ms)                                                                                                                                                                   nitro 2:33:47 PM
+  ├─ /Element/_payload.json (1ms)                                                                                                                                                                nitro 2:33:47 PM
+  ├─ /_payload.json (0ms)                                                                                                                                                                        nitro 2:33:47 PM
+  ├─ /service/_payload.json (0ms)                                                                                                                                                                nitro 2:33:47 PM
+  ├─ /user/_payload.json (0ms)                                                                                                                                                                   nitro 2:33:47 PM
+  ├─ /element/_payload.json (1ms)                                                                                                                                                                nitro 2:33:47 PM
+✔ Generated public .output/public                                                                                                                                                               nitro 2:33:47 PM
+✔ You can preview this build using npx serve .output/public                                                                                                                                     nitro 2:33:47 PM
+✔ You can now deploy .output/public to any static hosting! 
 ```
 
-Have a look into the `dist` folder - it should contain all files necessary for your site to host in a static hosting service like AWS S3 (or GitHub Pages etc.).
+Have a look into the `.output/public` folder - it should contain all files necessary for your site to host in a static hosting service like AWS S3 (or GitHub Pages etc.).
 
 
 ## Deploy Static Site Generated Nuxt.js app to AWS S3 with Pulumi
@@ -771,21 +814,21 @@ const nuxtBucket = new aws.s3.Bucket("microservice-ui-nuxt-js-hosting-bucket", {
 
 // S3 Objects from Nuxt.js static site generation will be added through aws CLI instead of Pulumi like this
 // (see https://www.pulumi.com/docs/tutorials/aws/aws-ts-static-website/#deployment-speed):
-// aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+// aws s3 sync ../.output/public/ s3://$(pulumi stack output bucketName) --acl public-read
 
 // Export the name of the bucket
 export const bucketName = nuxtBucket.id;
 export const bucketUrl = nuxtBucket.websiteEndpoint;
 ```
 
-And for every file inside the Nuxt.js target dir `dist` we create a new S3 object inside the S3 Bucket.
+And for every file inside the Nuxt.js target dir `.output/public` we create a new S3 object inside the S3 Bucket.
 
 > But this shouldn't be done using Pulumi's `BucketObject` for multiple files really - see this so Q&A for more details: https://stackoverflow.com/questions/67318524/pulumi-typescript-aws-how-to-upload-multiple-files-to-s3-incl-nested-files
 
 Instead we should use AWS CLI directly to copy (and later incrementally sync, when new builds ran) our static website files to our S3 Bucket like this:
 
 ```shell
-aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+aws s3 sync ../.output/public/ s3://$(pulumi stack output bucketName) --acl public-read
 ```
 
 Using $(pulumi stack output bucketName) we simply get the S3 Bucket name that was created by Pulumi. Mind the --acl public-read parameter at the end, since you have to enable public read access on each of your static web files in S3, although the Bucket itself already has public read access!
@@ -893,7 +936,7 @@ jobs:
 
       - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
         run: |
-          aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+          aws s3 sync ../.output/public/ s3://$(pulumi stack output bucketName) --acl public-read
           echo "Access the Nuxt.js app at the following URL:"
           pulumi stack output bucketUrl
         working-directory: ./deployment
@@ -956,7 +999,7 @@ After the obligatory jest test run via `npm run test`, we finally need to genera
 npm run generate
 ```
 
-This will generate all files into the `dist` directory we'll later use with the AWS CLI to sync into our S3 Bucket.
+This will generate all files into the `.output/public` directory we'll later use with the AWS CLI to sync into our S3 Bucket.
 
 After having installed the Pulumi CLI with the [pulumi/action-install-pulumi-cli](https://github.com/pulumi/action-install-pulumi-cli) action, we can use Pulumi to create our AWS resources - which is our static website hosting enabled S3 Bucket mainly.
 
@@ -965,7 +1008,7 @@ We also use GitHub Actions ability to define a `working-directory: ./deployment`
 To not run into problems using the pre-installed AWS CLI on GitHub Actions we should also configure our AWS credentials using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action. Otherwise we'll run into errors like this:
 
 ```shell
-Run aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+Run aws s3 sync ../.output/public/ s3://$(pulumi stack output bucketName) --acl public-read
 
 <botocore.awsrequest.AWSRequest object at 0x7f01644bd070>
 ```
@@ -994,7 +1037,7 @@ set a variable like `s3_url` that will hold the S3 Buckets url with `echo "::set
       - name: Deploy Nuxt.js generated static site to S3 Bucket via AWS CLI
         id: aws-sync
         run: |
-          aws s3 sync ../dist/ s3://$(pulumi stack output bucketName) --acl public-read
+          aws s3 sync ../.output/public/ s3://$(pulumi stack output bucketName) --acl public-read
           echo "Access the Nuxt.js app at the following URL:"
           pulumi stack output bucketUrl
           echo "::set-output name=s3_url::http://$(pulumi stack output bucketUrl)"
@@ -1285,20 +1328,20 @@ aa7a1571fd83: Pull complete
 Digest: sha256:1d1e3125a8fdab6136b490891c7d9717bb9e108a3df870f55f77f64ecea4d597
 Status: Downloaded newer image for ghcr.io/jonashackt/microservice-ui-nuxt-js:latest
 
- FATAL  No build files found in /workspace/.nuxt/dist/server.                                                                                                                       13:09:38
+ FATAL  No build files found in /workspace/.nuxt/.output/public/server.                                                                                                                       13:09:38
 Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
 
   Use either `nuxt build` or `builder.build()` or start nuxt in development mode.
-  at VueRenderer._ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/vue-renderer/dist/vue-renderer.js:758:13)
-  at async Server.ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/server/dist/server.js:637:5)
-  at async Nuxt._init (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/core/dist/core.js:482:7)
+  at VueRenderer._ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/vue-renderer/.output/public/vue-renderer.js:758:13)
+  at async Server.ready (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/server/.output/public/server.js:637:5)
+  at async Nuxt._init (/layers/paketo-buildpacks_npm-install/modules/node_modules/@nuxt/core/.output/public/core.js:482:7)
 
 
    ╭─────────────────────────────────────────────────────────────────────────────────────╮
    │                                                                                     │
    │   ✖ Nuxt Fatal Error                                                                │
    │                                                                                     │
-   │   Error: No build files found in /workspace/.nuxt/dist/server.                      │
+   │   Error: No build files found in /workspace/.nuxt/.output/public/server.                      │
    │   Use either `nuxt build` or `builder.build()` or start nuxt in development mode.   │
    │                                                                                     │
    ╰─────────────────────────────────────────────────────────────────────────────────────╯
