@@ -39,8 +39,8 @@ jobs:
       - name: Run tests 🧪
         run: npm run test
 
-      - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
-        run: npm run generate
+      - name: Generate Static Site from Nuxt.js application (nuxt build, see package.json)
+        run: npm run build
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -58,6 +58,7 @@ jobs:
         run: |
           pack build ghcr.io/jonashackt/microservice-ui-nuxt-js:latest \
               --builder paketobuildpacks/builder-jammy-base \
+              --env BP_LAUNCHPOINT=".output/server/index.mjs" \
               --path . \
               --env "BP_OCI_SOURCE=https://github.com/jonashackt/microservice-ui-nuxt-js" \
               --cache-image ghcr.io/jonashackt/microservice-ui-nuxt-js-paketo-cache-image:latest \
