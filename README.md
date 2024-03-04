@@ -1,9 +1,10 @@
 # microservice-ui-nuxt-js
-[![static-site-pulumi-aws-s3-deploy](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/static-site-pulumi-aws-s3-deploy/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
-[![server-side-rendering-nodejs-container-paketo](https://github.com/jonashackt/microservice-ui-nuxt-js/workflows/server-side-rendering-nodejs-container-paketo/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions)
+[![static-site-pulumi-aws-s3-deploy](https://github.com/jonashackt/microservice-ui-nuxt-js/actions/workflows/static-site-pulumi-aws-s3-deploy.yml/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions/workflows/static-site-pulumi-aws-s3-deploy.yml)
+[![server-side-rendering-nodejs-container-paketo](https://github.com/jonashackt/microservice-ui-nuxt-js/actions/workflows/server-side-rendering-nodejs-container-paketo.yml/badge.svg)](https://github.com/jonashackt/microservice-ui-nuxt-js/actions/workflows/server-side-rendering-nodejs-container-paketo.yml)
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/jonashackt/spring-boot-vuejs/blob/master/LICENSE)
 [![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
-[![versionnuxtjs](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.dependencies.nuxt&label=nuxt&logo=nuxt.js)](https://nuxtjs.org/)
+[![versionnuxtjs](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.devDependencies.nuxt&label=nuxt&logo=nuxt.js)](https://nuxtjs.org/)
+[![versionvitest](https://img.shields.io/badge/dynamic/json?color=brightgreen&url=https://raw.githubusercontent.com/jonashackt/microservice-ui-nuxt-js/main/package.json&query=$.devDependencies.vitest&label=vitest&logo=vitest)](https://vitest.dev/)
 
 Example project showing how to create &amp; deploy a Nuxt.js / Vue.js based frontend and how to interact with a Spring Boot microservice (https://github.com/jonashackt/microservice-api-spring-boot)
 
