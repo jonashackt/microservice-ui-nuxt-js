@@ -47,6 +47,12 @@ jobs:
       - name: Generate Static Site from Nuxt.js application (nuxt generate, see package.json)
         run: npm run generate
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuxt-build-output
+          path: ./.output/public
+
       - name: Install Pulumi CLI
         uses: pulumi/action-install-pulumi-cli@v2.0.0
 
