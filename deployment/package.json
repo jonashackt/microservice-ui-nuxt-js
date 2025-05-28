@@ -1,5 +1,6 @@
 {
     "name": "microservice-ui-nuxt-js-deployment",
+    "main": "index.ts",
     "devDependencies": {
         "@types/node": "20.16.3"
     },
