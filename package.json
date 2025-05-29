@@ -19,7 +19,7 @@
     "nuxt": "3.17.4",
     "playwright-core": "1.52.0",
     "vitest": "3.1.4",
-    "vue": "3.5.15",
+    "vue": "3.5.16",
     "vue-router": "4.5.1"
   }
 }
